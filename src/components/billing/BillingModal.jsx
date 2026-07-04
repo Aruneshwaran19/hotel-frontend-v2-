@@ -1,0 +1,607 @@
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
+import auth from "../../auth/axiosInstance";
+import { DEFAULT_GST_RATES, formatIST } from "../../utils/billingUtils";
+import { generateInvoicePDF } from "../../utils/invoicePdf.jsx";
+import { downloadBillingPdf } from "../../utils/whatsappBill";
+
+const EMPTY_FORM = {
+  discount: 0,
+  add_ons: [],
+};
+
+const BillingModal = ({
+  open,
+  onClose,
+  selectedBill,
+  form,
+  setForm,
+  availableAddOns = [],
+  onDeleteComplete,
+}) => {
+  const [isOpen, setOpen] = useState(false);
+  const [gstNumber, setGstNumber] = useState("");
+  const [guestDiscount, setGuestDiscount] = useState(0);
+  const [gstMode, setGstMode] = useState("with");
+
+  useEffect(() => {
+    if (open) {
+      setGstNumber(selectedBill?.gst_number || "");
+      setGuestDiscount(0);
+      setGstMode("with");
+      setOpen(false);
+    }
+  }, [open, selectedBill]);
+
+  const safeForm = form || EMPTY_FORM;
+
+  const {
+    roomCharges,
+    kitchenCharges,
+    backendAddOnsTotal,
+    addOnsTotal,
+    roomGstRate,
+  } = useMemo(() => {
+    if (!selectedBill) {
+      return {
+        roomCharges: 0,
+        kitchenCharges: 0,
+        backendAddOnsTotal: 0,
+        addOnsTotal: 0,
+        roomGstRate: DEFAULT_GST_RATES.room,
+      };
+    }
+
+    const nextRoomCharges = (selectedBill.lines?.room ?? []).reduce(
+      (sum, item) => sum + Number(item?.total || 0),
+      0,
+    );
+
+    const nextKitchenCharges = (selectedBill.lines?.kitchen ?? []).reduce(
+      (sum, item) => sum + Number(item?.total || 0),
+      0,
+    );
+
+    const nextBackendAddOnsTotal = (selectedBill.lines?.addon ?? []).reduce(
+      (sum, item) => sum + Number(item?.total || 0),
+      0,
+    );
+
+    const newAddOnsTotal = (safeForm.add_ons ?? []).reduce(
+      (sum, addon) => sum + Number(addon.price || 0) * Number(addon.qty || 1),
+      0,
+    );
+
+    return {
+      roomCharges: nextRoomCharges,
+      kitchenCharges: nextKitchenCharges,
+      backendAddOnsTotal: nextBackendAddOnsTotal,
+      addOnsTotal: nextBackendAddOnsTotal + newAddOnsTotal,
+      roomGstRate: DEFAULT_GST_RATES.room,
+    };
+  }, [selectedBill, safeForm]);
+
+  if (!open || !selectedBill || !form) return null;
+
+  const safeGst = {
+    room: Number(selectedBill?.totals?.gst_rates?.room || roomGstRate),
+    kitchen: Number(
+      selectedBill?.totals?.gst_rates?.kitchen || DEFAULT_GST_RATES.kitchen,
+    ),
+  };
+
+  const isWithGST = gstMode === "with";
+  const subtotal = roomCharges + kitchenCharges + addOnsTotal;
+  const appliedDiscount =
+    Number(safeForm.discount || 0) + Number(guestDiscount || 0);
+  const discountedRoomCharges = roomCharges - appliedDiscount;
+  const roomGst = isWithGST ? discountedRoomCharges * safeGst.room : 0;
+  const kitchenGst = isWithGST ? kitchenCharges * safeGst.kitchen : 0;
+  const totalGst = roomGst + kitchenGst;
+  const subtotalWithGst = subtotal + totalGst;
+  const totalAmount = isWithGST ? subtotalWithGst : subtotal;
+  const advancePaid = Number(selectedBill.advance_paid || 0);
+  const balanceAmount = Number(
+    (totalAmount - appliedDiscount - advancePaid).toFixed(2),
+  );
+
+  const roomGstPercent = Number((safeGst.room * 100).toFixed(2));
+  const kitchenGstPercent = Number((safeGst.kitchen * 100).toFixed(2));
+
+  const handleFormChange = (field, value, index, type) => {
+    if (!type) {
+      setForm({ ...form, [field]: value });
+      return;
+    }
+
+    const updated = [...form.add_ons];
+    updated[index] = { ...updated[index], [field]: value };
+    setForm({ ...form, add_ons: updated });
+  };
+
+  const removeAddOn = (index) =>
+    setForm({ ...form, add_ons: form.add_ons.filter((_, i) => i !== index) });
+
+  const handleDeleteBill = async (id) => {
+    if (!id) {
+      toast.error("Invalid bill ID");
+      return;
+    }
+
+    try {
+      await auth.delete(`/billings/${id}`);
+      toast.success("Bill deleted");
+      onDeleteComplete?.(id);
+      onClose();
+    } catch (err) {
+      console.error("Delete failed", err);
+      toast.error("Failed to delete bill");
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    const billId = selectedBill?.id || selectedBill?.bill_id;
+
+    if (billId) {
+      try {
+        await downloadBillingPdf(billId, selectedBill?.customer_name);
+        toast.success("Invoice downloaded");
+      } catch (err) {
+        console.error("Download failed", err);
+        toast.error(
+          err.response?.data?.error ||
+            err.message ||
+            "Failed to download invoice",
+        );
+      }
+      return;
+    }
+
+    generateInvoicePDF({
+      selectedBill,
+      form,
+      gstIncluded: isWithGST,
+      gstNumber,
+      gstRates: {
+        room: safeGst.room,
+        kitchen: safeGst.kitchen,
+        addon: 0,
+      },
+      gstAmounts: {
+        room: roomGst,
+        kitchen: kitchenGst,
+        addon: 0,
+      },
+      subtotal,
+      subtotalWithGst: isWithGST ? subtotalWithGst : subtotal,
+      totalAmount,
+      advancePaid,
+      balanceAmount,
+      guestDiscount: appliedDiscount,
+      formatIST,
+      action: "download",
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4 overflow-auto">
+      <div className="relative bg-white w-full max-w-6xl rounded-2xl shadow-xl p-4 sm:p-6 flex flex-col xl:flex-row gap-6 my-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-9 text-3xl font-light text-gray-500 hover:text-gray-800"
+        >
+          &times;
+        </button>
+
+        <div className="flex-1 bg-gray-50 p-4 sm:p-6 rounded-xl space-y-4 overflow-auto xl:max-h-[80vh]">
+          <h3 className="font-semibold text-[#0A1A2F] text-lg">Edit Bill</h3>
+
+          <div className="space-y-2">
+            {!isOpen && (
+              <button
+                onClick={() => setOpen(true)}
+                className="px-3 py-1 ml-2 bg-[#0A1A2F] text-white rounded-lg text-sm"
+              >
+                Add Customer GST Number
+              </button>
+            )}
+            {isOpen && (
+              <div className="space-y-3 p-3 bg-white rounded-lg border border-gray-200">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Customer GST Number
+                  </label>
+                  <input
+                    type="text"
+                    value={gstNumber}
+                    onChange={(e) => setGstNumber(e.target.value)}
+                    className="w-full border rounded-lg p-2 text-sm mt-1"
+                    placeholder="Enter GST Number"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Guest Discount
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={guestDiscount}
+                    onChange={(e) =>
+                      setGuestDiscount(Math.max(Number(e.target.value) || 0, 0))
+                    }
+                    className="w-full border rounded-lg p-2 text-sm mt-1"
+                    placeholder="Enter guest discount amount"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Discount applied after GST
+                  </p>
+                </div>
+                <button
+                  onClick={() => setOpen(false)}
+                  className="w-full px-3 py-1 bg-green-600 text-white rounded-lg text-sm"
+                >
+                  Save
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-white rounded-lg border border-gray-200">
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">
+                Room Charges
+              </label>
+              <input
+                type="number"
+                value={roomCharges}
+                readOnly
+                className="w-full border rounded-lg p-2 text-sm bg-gray-100 cursor-not-allowed"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">
+                GST Mode
+              </label>
+              <select
+                value={gstMode}
+                onChange={(e) => setGstMode(e.target.value)}
+                className="w-full border rounded-lg p-2 text-sm bg-white"
+              >
+                <option value="with">With GST</option>
+                <option value="without">Without GST</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">
+                Room Discount
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={safeForm.discount}
+                onChange={(e) => {
+                  const value = Number(e.target.value) || 0;
+                  handleFormChange("discount", Math.min(value, roomCharges));
+                }}
+                className="w-full border rounded-lg p-2 text-sm"
+                placeholder="Enter discount amount"
+              />
+            </div>
+          </div>
+
+          {isWithGST && (
+            <div className="flex items-center gap-4 p-3 bg-white rounded-lg border border-gray-200">
+              <span className="text-sm font-medium">
+                GST applied to final bill
+              </span>
+              <span className="text-xs text-gray-600">
+                (Room: {roomGstPercent}%, Kitchen: {kitchenGstPercent}%)
+              </span>
+            </div>
+          )}
+
+          {(selectedBill.lines?.addon ?? []).length > 0 && (
+            <div className="p-3 bg-white rounded-lg border border-gray-200 space-y-1">
+              <label className="text-sm font-medium text-gray-700">
+                Saved Add-ons (from booking)
+              </label>
+              {selectedBill.lines.addon.map((addon, index) => (
+                <div
+                  key={index}
+                  className="flex justify-between text-sm text-gray-600"
+                >
+                  <span>{addon.description ?? `Add-on ${index + 1}`}</span>
+                  <span>Rs{Number(addon.total || 0).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Add New Add-ons</label>
+            {safeForm.add_ons.map((addon, index) => (
+              <div
+                key={index}
+                className="flex flex-col sm:flex-row gap-2 bg-white p-2 rounded-lg border border-gray-100 sm:border-none sm:p-0"
+              >
+                <select
+                  value={addon.name}
+                  onChange={(e) => {
+                    const selected = availableAddOns.find(
+                      (item) => item.name === e.target.value,
+                    );
+                    const updated = [...safeForm.add_ons];
+                    updated[index] = {
+                      name: selected?.name || "",
+                      qty: 1,
+                      price: selected?.price || 0,
+                    };
+                    setForm({ ...form, add_ons: updated });
+                  }}
+                  className="flex-1 border rounded-lg p-2 text-sm"
+                >
+                  <option value="">Select Add-on</option>
+                  {availableAddOns.map((option) => (
+                    <option key={option.id} value={option.name}>
+                      {option.name} - Rs{option.price}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex gap-2 w-full">
+                  <input
+                    type="number"
+                    value={addon.qty}
+                    onChange={(e) =>
+                      handleFormChange(
+                        "qty",
+                        Number(e.target.value),
+                        index,
+                        "add_on",
+                      )
+                    }
+                    className="w-full sm:w-16 border rounded-lg p-2 text-sm"
+                    placeholder="Qty"
+                  />
+                  <input
+                    type="number"
+                    value={addon.price}
+                    readOnly
+                    className="w-full sm:w-24 border rounded-lg p-2 bg-gray-100 text-sm"
+                  />
+                  <button
+                    onClick={() => removeAddOn(index)}
+                    className="px-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                  >
+                    x
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={() =>
+                setForm({
+                  ...form,
+                  add_ons: [
+                    ...safeForm.add_ons,
+                    { name: "", qty: 1, price: 0 },
+                  ],
+                })
+              }
+              className="px-3 py-1 ml-2 bg-[#0A1A2F] text-white rounded-lg text-sm"
+            >
+              Add-on
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 xl:max-h-[80vh] overflow-auto space-y-2">
+          <h3 className="font-semibold text-[#0A1A2F] text-lg mb-2">
+            Bill Preview
+          </h3>
+
+          <div className="text-sm text-gray-700 space-y-1">
+            <p>
+              <b>Booking ID:</b> {selectedBill.booking_id}
+            </p>
+            <p>
+              <b>Customer:</b> {selectedBill.customer_name}
+            </p>
+            <p className="text-xs text-gray-500">
+              Customer ID: {selectedBill.customer_id}
+            </p>
+            {gstNumber && (
+              <p>
+                <b>GST Number:</b> {gstNumber}
+              </p>
+            )}
+            <p>
+              <b>Room:</b> {selectedBill.room_number || "N/A"}
+            </p>
+            <p>
+              <b>Room Category:</b> {selectedBill.category || "N/A"}
+            </p>
+            <p>
+              <b>Check-in:</b>{" "}
+              {(() => {
+                const raw = selectedBill.check_in;
+                if (!raw) return "N/A";
+                const dateOnly = String(raw).split("T")[0].split(" ")[0];
+                const [y, m, d] = dateOnly.split("-");
+                const months = [
+                  "Jan",
+                  "Feb",
+                  "Mar",
+                  "Apr",
+                  "May",
+                  "Jun",
+                  "Jul",
+                  "Aug",
+                  "Sep",
+                  "Oct",
+                  "Nov",
+                  "Dec",
+                ];
+                return `${d} ${months[Number(m) - 1]} ${y}, 01:00 PM`;
+              })()}
+            </p>
+            <p>
+              <b>Check-out:</b>{" "}
+              {(() => {
+                const raw = selectedBill.check_out;
+                if (!raw) return "N/A";
+                const dateOnly = String(raw).split("T")[0].split(" ")[0];
+                const [y, m, d] = dateOnly.split("-");
+                const months = [
+                  "Jan",
+                  "Feb",
+                  "Mar",
+                  "Apr",
+                  "May",
+                  "Jun",
+                  "Jul",
+                  "Aug",
+                  "Sep",
+                  "Oct",
+                  "Nov",
+                  "Dec",
+                ];
+                const billingDate = new Date(
+                  selectedBill.created_at || new Date(),
+                );
+                const timeStr = billingDate
+                  .toLocaleTimeString("en-IN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                    timeZone: "Asia/Kolkata",
+                  })
+                  .toUpperCase();
+                return `${d} ${months[Number(m) - 1]} ${y}, 11:00 AM`;
+              })()}
+            </p>
+
+            <hr className="my-2 border-gray-200" />
+
+            <p>
+              <b>Room Charges:</b> Rs{roomCharges.toFixed(2)}
+            </p>
+            <p>
+              <b>Kitchen Charges:</b> Rs{kitchenCharges.toFixed(2)}
+            </p>
+
+            {backendAddOnsTotal > 0 && (
+              <p>
+                <b>Add-ons (saved):</b> Rs{backendAddOnsTotal.toFixed(2)}
+              </p>
+            )}
+
+            {safeForm.add_ons.length > 0 && (
+              <>
+                <p>
+                  <b>New Add-ons:</b>
+                </p>
+                <ul className="list-disc ml-5">
+                  {safeForm.add_ons.map((addon, index) => (
+                    <li key={index}>
+                      {addon.name} x {addon.qty} - Rs{addon.price}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            <p>
+              <b>Subtotal:</b> Rs{subtotal.toFixed(2)}
+            </p>
+            {isWithGST && (
+              <>
+                {roomGst > 0 && (
+                  <p>
+                    <b>Room GST ({roomGstPercent}%):</b> Rs{roomGst.toFixed(2)}
+                  </p>
+                )}
+                {kitchenGst > 0 && (
+                  <p>
+                    <b>Kitchen GST ({kitchenGstPercent}%):</b> Rs
+                    {kitchenGst.toFixed(2)}
+                  </p>
+                )}
+                <p>
+                  <b>Subtotal with GST:</b> Rs{subtotalWithGst.toFixed(2)}
+                </p>
+              </>
+            )}
+
+            <hr className="my-2 border-gray-300" />
+
+            <p className="flex justify-between">
+              <span>
+                <b>
+                  {isWithGST ? "Total Amount (Incl. GST):" : "Total Amount:"}
+                </b>
+              </span>
+              <span>Rs{totalAmount.toFixed(2)}</span>
+            </p>
+
+            {appliedDiscount > 0 && (
+              <p className="flex justify-between text-orange-600">
+                <span>
+                  <b>Discount:</b>
+                </span>
+                <span>- Rs{appliedDiscount.toFixed(2)}</span>
+              </p>
+            )}
+
+            <p className="flex justify-between text-green-600 font-medium">
+              <span>
+                <b>Advance Paid:</b>
+              </span>
+              <span>- Rs{advancePaid.toFixed(2)}</span>
+            </p>
+
+            <hr className="my-2 border-gray-300" />
+
+            <p className="flex justify-between text-lg font-bold text-red-600">
+              <span>Balance Payable:</span>
+              <span>Rs{balanceAmount.toFixed(2)}</span>
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2.5 mt-4">
+            <button
+              onClick={handleDownloadPdf}
+              className="flex items-center justify-center gap-2 w-full py-2 bg-[#0A1A2F] hover:bg-[#14273F] text-white rounded-lg font-medium text-sm transition-all active:scale-95"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+              Download PDF File
+            </button>
+
+            {gstMode === "without" && (
+              <button
+                onClick={() => handleDeleteBill(selectedBill.id)}
+                className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm transition-all active:scale-95"
+              >
+                Delete Bill
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default BillingModal;
