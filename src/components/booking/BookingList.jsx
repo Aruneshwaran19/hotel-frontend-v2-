@@ -383,8 +383,11 @@ export default function BookingList({
         toast.warn(whatsapp.error);
       }
 
-      resetCheckoutState();
-      onGoToBilling?.();
+      setCheckoutResult({
+        billingId: checkoutRes.data?.billing_id,
+        customerName: checkoutBooking?.customer_name,
+        whatsapp,
+      });
     } catch (err) {
       console.error(err);
       toast.error(
@@ -542,13 +545,21 @@ export default function BookingList({
                   className={`rounded-lg border p-3 mb-4 text-sm ${
                     checkoutResult.whatsapp?.success
                       ? "border-green-200 bg-green-50 text-green-800"
-                      : checkoutResult.whatsapp?.skipped
-                        ? "border-amber-200 bg-amber-50 text-amber-800"
-                        : "border-red-200 bg-red-50 text-red-800"
+                      : checkoutResult.whatsapp?.pending
+                        ? "border-blue-200 bg-blue-50 text-blue-800"
+                        : checkoutResult.whatsapp?.skipped
+                          ? "border-amber-200 bg-amber-50 text-amber-800"
+                          : "border-red-200 bg-red-50 text-red-800"
                   }`}
                 >
                   {checkoutResult.whatsapp?.success && (
                     <p>Invoice PDF sent to customer on WhatsApp.</p>
+                  )}
+                  {checkoutResult.whatsapp?.pending && (
+                    <p>
+                      {checkoutResult.whatsapp.message ||
+                        "Sending invoice via WhatsApp…"}
+                    </p>
                   )}
                   {checkoutResult.whatsapp?.skipped && (
                     <p>
@@ -557,6 +568,7 @@ export default function BookingList({
                     </p>
                   )}
                   {!checkoutResult.whatsapp?.success &&
+                    !checkoutResult.whatsapp?.pending &&
                     !checkoutResult.whatsapp?.skipped && (
                       <p>
                         {checkoutResult.whatsapp?.error ||
@@ -566,7 +578,44 @@ export default function BookingList({
                 </div>
 
                 <div className="flex flex-wrap justify-end gap-3">
+                  <div
+                    className={`rounded-lg border p-3 mb-4 text-sm ${
+                      checkoutResult.whatsapp?.success
+                        ? "border-green-200 bg-green-50 text-green-800"
+                        : checkoutResult.whatsapp?.pending
+                          ? "border-blue-200 bg-blue-50 text-blue-800"
+                          : checkoutResult.whatsapp?.skipped
+                            ? "border-amber-200 bg-amber-50 text-amber-800"
+                            : "border-red-200 bg-red-50 text-red-800"
+                    }`}
+                  >
+                    {checkoutResult.whatsapp?.success && (
+                      <p>Invoice PDF sent to customer on WhatsApp.</p>
+                    )}
+                    {checkoutResult.whatsapp?.pending && (
+                      <p>
+                        {checkoutResult.whatsapp.message ||
+                          "Sending invoice via WhatsApp…"}
+                      </p>
+                    )}
+                    {checkoutResult.whatsapp?.skipped && (
+                      <p>
+                        {checkoutResult.whatsapp.message ||
+                          "WhatsApp is not configured on the server."}
+                      </p>
+                    )}
+                    {!checkoutResult.whatsapp?.success &&
+                      !checkoutResult.whatsapp?.pending &&
+                      !checkoutResult.whatsapp?.skipped && (
+                        <p>
+                          {checkoutResult.whatsapp?.error ||
+                            "Could not send invoice via WhatsApp."}
+                        </p>
+                      )}
+                  </div>
+
                   {!checkoutResult.whatsapp?.success &&
+                    !checkoutResult.whatsapp?.pending &&
                     !checkoutResult.whatsapp?.skipped && (
                       <button
                         onClick={handleRetryWhatsApp}

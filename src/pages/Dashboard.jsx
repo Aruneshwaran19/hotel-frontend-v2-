@@ -12,6 +12,7 @@ import {
   Users,
   Calendar,
   HardDrive,
+  Download,
 } from "lucide-react";
 import {
   LineChart,
@@ -32,6 +33,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import auth from "../auth/axiosInstance";
 import CustomerAvatar from "../components/common/CustomerAvatar";
+import { toast } from "react-toastify";
 
 export default function Dashboard() {
   const NAVY = "#0A1A2F";
@@ -154,6 +156,25 @@ export default function Dashboard() {
     },
   ];
 
+  const handleDownloadSQL = async () => {
+    try {
+      const response = await auth.get("/backup/export", {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `hotel-backup-${new Date().toISOString().slice(0, 10)}.sql`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to download database backup");
+    }
+  };
+
   const quickActions = [
     {
       label: "New Booking",
@@ -167,6 +188,16 @@ export default function Dashboard() {
       link: "/billing",
       gradient: "from-blue-500 to-indigo-600",
     },
+    ...(isAdmin
+      ? [
+          {
+            label: "Download Backup",
+            icon: Download,
+            onClick: handleDownloadSQL,
+            gradient: "from-slate-700 to-slate-900",
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -382,7 +413,9 @@ export default function Dashboard() {
               {quickActions.map((action, index) => (
                 <button
                   key={index}
-                  onClick={() => navigate(action.link)}
+                  onClick={() =>
+                    action.onClick ? action.onClick() : navigate(action.link)
+                  }
                   className="group relative overflow-hidden rounded-2xl  p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
                 >
                   {/* Gradient background */}
