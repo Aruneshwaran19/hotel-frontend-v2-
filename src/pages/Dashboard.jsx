@@ -66,6 +66,19 @@ export default function Dashboard() {
 
   const COLORS = ["#0A1A2F", "#1C3A5D", "#3A5D7D", "#5D7F9D"];
 
+  function formatUsed(usedBytes) {
+    const value = Number(usedBytes || 0);
+    if (value <= 0) return "0 B";
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    const exponent = Math.min(
+      Math.floor(Math.log(value) / Math.log(1024)),
+      units.length - 1,
+    );
+    const scaled = value / 1024 ** exponent;
+    const decimals = exponent === 0 ? 0 : 2;
+    return `${scaled.toFixed(decimals)} ${units[exponent]}`;
+  }
+
   useEffect(() => {
     auth
       .get("/dashboard/summary")
@@ -242,7 +255,7 @@ export default function Dashboard() {
                       Storage Usage
                     </p>
                     <p className="text-sm font-bold text-gray-800">
-                      {usedGb.toFixed(2)}{" "}
+                      {formatUsed(storage?.usedBytes)}{" "}
                       <span className="text-gray-400 font-medium">
                         / {limitGb > 0 ? `${limitGb} GB` : "— GB"}
                       </span>
@@ -270,7 +283,7 @@ export default function Dashboard() {
                     </span>
                     <span className="text-xs text-gray-400">
                       {limitGb > 0
-                        ? `${Math.max(0, limitGb - usedGb).toFixed(2)} GB free`
+                        ? `${formatUsed(Math.max(0, limitGb * 1024 ** 3 - Number(storage?.usedBytes || 0)))} free`
                         : "—"}
                     </span>
                   </div>
