@@ -4,10 +4,7 @@ import BookingTable from "./BookingTable";
 import { LoadingSpinner } from "../common/LoadingSpinner";
 import { toast } from "react-toastify";
 import { DEFAULT_GST_RATES } from "../../utils/billingUtils";
-import {
-  sendBillViaWhatsApp,
-  downloadBillingPdf,
-} from "../../utils/whatsappBill";
+import { downloadBillingPdf } from "../../utils/whatsappBill";
 
 export default function BookingList({
   bookings,
@@ -22,15 +19,12 @@ export default function BookingList({
   const [checkoutData, setCheckoutData] = useState({});
   const [checkoutResult, setCheckoutResult] = useState(null);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
-  const [whatsappRetrying, setWhatsappRetrying] = useState(false);
-  const [showWhatsappConfirm, setShowWhatsappConfirm] = useState(false);
   const [pdfDownloading, setPdfDownloading] = useState(false);
   const [availableAddons, setAvailableAddons] = useState([]);
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
   const [selectedAddonId, setSelectedAddonId] = useState("");
   const [kitchenTotal, setKitchenTotal] = useState(0);
   const [addonTotal, setAddonTotal] = useState(0);
-  const [sendWhatsappOnCheckout, setSendWhatsappOnCheckout] = useState(true);
 
   const normalize = (str) =>
     String(str || "")
@@ -159,7 +153,6 @@ export default function BookingList({
     setCheckoutData({});
     setCheckoutResult(null);
     setCheckoutBusy(false);
-    setWhatsappRetrying(false);
     setPdfDownloading(false);
     setKitchenTotal(0);
     setAddonTotal(0);
@@ -340,7 +333,7 @@ export default function BookingList({
     }));
   };
 
-  const confirmCheckout = async (sendWhatsapp = true) => {
+  const confirmCheckout = async () => {
     try {
       setCheckoutBusy(true);
 
@@ -364,29 +357,17 @@ export default function BookingList({
           total_amount: totalAmount,
           discount: Number(checkoutData.discount || 0),
           gst_number: checkoutData.gstNumber || undefined,
-          send_whatsapp: sendWhatsapp,
         },
       );
 
       setAddonTotal(nextAddonTotal);
       onCheckoutComplete?.(checkoutBooking.id);
 
-      const whatsapp = checkoutRes.data?.whatsapp;
       toast.success("Checkout completed successfully");
-      if (whatsapp?.pending) {
-        toast.info(whatsapp.message || "Invoice is being sent via WhatsApp");
-      } else if (whatsapp?.success) {
-        toast.success("Invoice sent to customer via WhatsApp");
-      } else if (whatsapp?.skipped) {
-        toast.info(whatsapp.message || "WhatsApp is not configured");
-      } else if (whatsapp?.error) {
-        toast.warn(whatsapp.error);
-      }
 
       setCheckoutResult({
         billingId: checkoutRes.data?.billing_id,
         customerName: checkoutBooking?.customer_name,
-        whatsapp,
       });
     } catch (err) {
       console.error(err);
@@ -396,11 +377,6 @@ export default function BookingList({
     } finally {
       setCheckoutBusy(false);
     }
-  };
-
-  const handleWhatsappChoice = (sendWhatsapp) => {
-    setShowWhatsappConfirm(false);
-    confirmCheckout(sendWhatsapp);
   };
 
   const handleDownloadCheckoutPdf = async () => {
@@ -422,34 +398,6 @@ export default function BookingList({
       );
     } finally {
       setPdfDownloading(false);
-    }
-  };
-
-  const handleRetryWhatsApp = async () => {
-    if (!checkoutResult?.billingId) return;
-
-    try {
-      setWhatsappRetrying(true);
-      const result = await sendBillViaWhatsApp(checkoutResult.billingId);
-      setCheckoutResult((prev) => ({ ...prev, whatsapp: result }));
-
-      if (result?.success) {
-        toast.success("Invoice sent to customer via WhatsApp");
-      } else if (result?.skipped) {
-        toast.info(result.message || "WhatsApp is not configured");
-      }
-    } catch (err) {
-      const message =
-        err.response?.data?.error || "Could not send invoice via WhatsApp";
-      setCheckoutResult((prev) => ({
-        ...prev,
-        whatsapp: { success: false, error: message },
-      }));
-      if (!err.response?.data?.skipped) {
-        toast.warn(message);
-      }
-    } finally {
-      setWhatsappRetrying(false);
     }
   };
 
@@ -541,90 +489,7 @@ export default function BookingList({
                   </div>
                 </div>
 
-                <div
-                  className={`rounded-lg border p-3 mb-4 text-sm ${
-                    checkoutResult.whatsapp?.success
-                      ? "border-green-200 bg-green-50 text-green-800"
-                      : checkoutResult.whatsapp?.pending
-                        ? "border-blue-200 bg-blue-50 text-blue-800"
-                        : checkoutResult.whatsapp?.skipped
-                          ? "border-amber-200 bg-amber-50 text-amber-800"
-                          : "border-red-200 bg-red-50 text-red-800"
-                  }`}
-                >
-                  {checkoutResult.whatsapp?.success && (
-                    <p>Invoice PDF sent to customer on WhatsApp.</p>
-                  )}
-                  {checkoutResult.whatsapp?.pending && (
-                    <p>
-                      {checkoutResult.whatsapp.message ||
-                        "Sending invoice via WhatsApp…"}
-                    </p>
-                  )}
-                  {checkoutResult.whatsapp?.skipped && (
-                    <p>
-                      {checkoutResult.whatsapp.message ||
-                        "WhatsApp is not configured on the server."}
-                    </p>
-                  )}
-                  {!checkoutResult.whatsapp?.success &&
-                    !checkoutResult.whatsapp?.pending &&
-                    !checkoutResult.whatsapp?.skipped && (
-                      <p>
-                        {checkoutResult.whatsapp?.error ||
-                          "Could not send invoice via WhatsApp."}
-                      </p>
-                    )}
-                </div>
-
                 <div className="flex flex-wrap justify-end gap-3">
-                  <div
-                    className={`rounded-lg border p-3 mb-4 text-sm ${
-                      checkoutResult.whatsapp?.success
-                        ? "border-green-200 bg-green-50 text-green-800"
-                        : checkoutResult.whatsapp?.pending
-                          ? "border-blue-200 bg-blue-50 text-blue-800"
-                          : checkoutResult.whatsapp?.skipped
-                            ? "border-amber-200 bg-amber-50 text-amber-800"
-                            : "border-red-200 bg-red-50 text-red-800"
-                    }`}
-                  >
-                    {checkoutResult.whatsapp?.success && (
-                      <p>Invoice PDF sent to customer on WhatsApp.</p>
-                    )}
-                    {checkoutResult.whatsapp?.pending && (
-                      <p>
-                        {checkoutResult.whatsapp.message ||
-                          "Sending invoice via WhatsApp…"}
-                      </p>
-                    )}
-                    {checkoutResult.whatsapp?.skipped && (
-                      <p>
-                        {checkoutResult.whatsapp.message ||
-                          "WhatsApp is not configured on the server."}
-                      </p>
-                    )}
-                    {!checkoutResult.whatsapp?.success &&
-                      !checkoutResult.whatsapp?.pending &&
-                      !checkoutResult.whatsapp?.skipped && (
-                        <p>
-                          {checkoutResult.whatsapp?.error ||
-                            "Could not send invoice via WhatsApp."}
-                        </p>
-                      )}
-                  </div>
-
-                  {!checkoutResult.whatsapp?.success &&
-                    !checkoutResult.whatsapp?.pending &&
-                    !checkoutResult.whatsapp?.skipped && (
-                      <button
-                        onClick={handleRetryWhatsApp}
-                        disabled={whatsappRetrying}
-                        className="border border-green-600 text-green-700 px-4 py-2 rounded disabled:opacity-50"
-                      >
-                        {whatsappRetrying ? "Sending..." : "Retry WhatsApp"}
-                      </button>
-                    )}
                   <button
                     onClick={handleDownloadCheckoutPdf}
                     disabled={pdfDownloading}
@@ -831,18 +696,6 @@ export default function BookingList({
                   </div>
                 </div>
 
-                <label className="flex items-center gap-2 mb-3 text-sm text-gray-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={sendWhatsappOnCheckout}
-                    onChange={(e) =>
-                      setSendWhatsappOnCheckout(e.target.checked)
-                    }
-                    className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                  />
-                  Send invoice to customer via WhatsApp
-                </label>
-
                 <div className="flex justify-end gap-3 mt-4">
                   <button
                     onClick={resetCheckoutState}
@@ -852,7 +705,7 @@ export default function BookingList({
                     Cancel
                   </button>
                   <button
-                    onClick={() => confirmCheckout(sendWhatsappOnCheckout)}
+                    onClick={() => confirmCheckout()}
                     disabled={checkoutBusy}
                     className="bg-[#0A1B4D] text-white px-4 py-2 rounded disabled:opacity-50"
                   >
@@ -861,44 +714,6 @@ export default function BookingList({
                 </div>
               </>
             )}
-          </div>
-        </div>
-      )}
-
-      {showWhatsappConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden animate-[fadeIn_0.2s_ease-out]">
-            <div className="px-6 pt-6 pb-4 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                <svg
-                  className="w-6 h-6 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.38 5.07L2 22l4.93-1.38C8.42 21.5 10.15 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.65 0-3.19-.46-4.5-1.26l-.32-.19-3.34.94.94-3.34-.19-.32C4.46 15.19 4 13.65 4 12c0-4.42 3.58-8 8-8s8 3.58 8 8-3.58 8-8 8z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Send WhatsApp Invoice?
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Do you want to send the invoice to the customer via WhatsApp?
-              </p>
-            </div>
-            <div className="flex border-t border-gray-100">
-              <button
-                onClick={() => handleWhatsappChoice(false)}
-                className="flex-1 py-3.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors border-r border-gray-100"
-              >
-                No
-              </button>
-              <button
-                onClick={() => handleWhatsappChoice(true)}
-                className="flex-1 py-3.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors"
-              >
-                Yes
-              </button>
-            </div>
           </div>
         </div>
       )}

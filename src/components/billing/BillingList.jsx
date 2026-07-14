@@ -8,7 +8,7 @@ import BillingModal from "./BillingModal";
 import Pagination from "./Pagination";
 import SearchInput from "../common/SearchInput";
 import { LoadingSpinner } from "../common/LoadingSpinner";
-import { Download, MoreVertical, Eye, Trash2 } from "lucide-react";
+import { Download, MoreVertical, Eye, Trash2, CheckCircle2 } from "lucide-react";
 import CustomerAvatar from "../common/CustomerAvatar";
 
 const PAGE_SIZE = 8;
@@ -28,10 +28,11 @@ function BilledByCell({ billedBy }) {
 }
 
 // ─── TABLE ROW ─────────
-function BillRow({ bill, onOpen, onDeleteComplete }) {
+function BillRow({ bill, onOpen, onDeleteComplete, onTogglePaid }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const isPaid = bill.payment_status === "paid";
 
   const formattedDate = bill.created_at
     ? new Date(bill.created_at).toLocaleDateString("en-IN", {
@@ -94,8 +95,12 @@ function BillRow({ bill, onOpen, onDeleteComplete }) {
         <div className="text-sm font-bold text-gray-900">
           ₹{Number(bill.total_amount || 0).toLocaleString("en-IN")}
         </div>
-        <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-          Total
+        <div
+          className={`text-[10px] font-semibold uppercase tracking-wide ${
+            isPaid ? "text-green-600" : "text-red-500"
+          }`}
+        >
+          {isPaid ? "Paid" : "Not Paid"}
         </div>
       </td>
 
@@ -134,15 +139,29 @@ function BillRow({ bill, onOpen, onDeleteComplete }) {
                 }}
                 className="rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden"
               >
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onOpen(bill);
-                  }}
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-blue-50"
-                >
-                  <Eye size={14} /> Generate Bill
-                </button>
+                {isPaid && (
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onOpen(bill);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-blue-50"
+                  >
+                    <Eye size={14} /> Generate Bill
+                  </button>
+                )}
+
+                {!isPaid && (
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onTogglePaid(bill);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-green-600 hover:bg-green-50"
+                  >
+                    <CheckCircle2 size={14} /> Mark as Paid
+                  </button>
+                )}
 
                 {!confirmDelete ? (
                   <button
@@ -222,6 +241,28 @@ const BillingList = () => {
   const removeBillFromUi = (billId) => {
     setBillings((prev) => prev.filter((b) => b.id !== billId));
     setFilteredBillings((prev) => prev.filter((b) => b.id !== billId));
+  };
+
+  const handleTogglePaid = async (bill) => {
+    const nextStatus = bill.payment_status === "paid" ? "unpaid" : "paid";
+    try {
+      await axios.patch(
+        `${API_BASE_URL}/api/billings/${bill.id}/payment-status`,
+        { status: nextStatus },
+      );
+      const applyStatus = (list) =>
+        list.map((b) =>
+          b.id === bill.id ? { ...b, payment_status: nextStatus } : b,
+        );
+      setBillings(applyStatus);
+      setFilteredBillings(applyStatus);
+      toast.success(
+        nextStatus === "paid" ? "Bill marked as paid" : "Bill marked as not paid",
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update payment status");
+    }
   };
 
   const fetchBills = async () => {
@@ -450,6 +491,7 @@ const BillingList = () => {
                       bill={bill}
                       onOpen={openModal}
                       onDeleteComplete={removeBillFromUi}
+                      onTogglePaid={handleTogglePaid}
                     />
                   ))}
                 </tbody>

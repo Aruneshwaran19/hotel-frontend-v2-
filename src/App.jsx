@@ -18,6 +18,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Rooms from "./pages/Rooms";
 import Customers from "./pages/Customers";
+import CustomerDetailsPage from "./pages/CustomerDetailsPage";
 import Kitchen from "./pages/Kitchen";
 import Billing from "./pages/Billing";
 import Booking from "./pages/Booking";
@@ -55,6 +56,7 @@ const AppLayout = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/rooms" element={<Rooms />} />
             <Route path="/customers" element={<Customers />} />
+            <Route path="/customers/:id" element={<CustomerDetailsPage />} />
             <Route path="/kitchen" element={<Kitchen />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/booking" element={<Booking />} />

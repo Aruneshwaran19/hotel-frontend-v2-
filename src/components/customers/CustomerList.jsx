@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Eye, Trash2, Edit2, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "react-toastify";
@@ -153,6 +154,7 @@ const Modal = ({ children, onClose }) => (
 
 /* ================= CUSTOMER LIST ================= */
 export default function CustomerList() {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -362,7 +364,7 @@ export default function CustomerList() {
                       <td className="px-3 py-3">
                         <ActionsMenu
                           customer={c}
-                          onView={setViewCustomer}
+                          onView={(customer) => navigate(`/customers/${customer.id}`)}
                           onEdit={handleEdit}
                           onDelete={deleteCustomer}
                           user={user}
