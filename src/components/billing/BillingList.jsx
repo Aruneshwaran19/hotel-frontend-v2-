@@ -8,13 +8,7 @@ import BillingModal from "./BillingModal";
 import Pagination from "./Pagination";
 import SearchInput from "../common/SearchInput";
 import { LoadingSpinner } from "../common/LoadingSpinner";
-import {
-  Download,
-  MoreVertical,
-  Eye,
-  Trash2,
-  CheckCircle2,
-} from "lucide-react";
+import { Download, MoreVertical, Eye, Trash2, CheckCircle2 } from "lucide-react";
 import CustomerAvatar from "../common/CustomerAvatar";
 
 const PAGE_SIZE = 8;
@@ -34,13 +28,7 @@ function BilledByCell({ billedBy }) {
 }
 
 // ─── TABLE ROW ─────────
-function BillRow({
-  bill,
-  onOpen,
-  onDeleteComplete,
-  onTogglePaid,
-  onSendWhatsapp,
-}) {
+function BillRow({ bill, onOpen, onDeleteComplete, onTogglePaid, onSendWhatsapp }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
@@ -175,15 +163,7 @@ function BillRow({
                     }}
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
                   >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                      <path d="M12.017 2C6.484 2 2 6.485 2 12.017c0 1.86.502 3.61 1.377 5.11L2 22l4.998-1.351a9.965 9.965 0 0 0 5.02 1.351h.004C17.55 22 22 17.514 22 12.017 22 6.485 17.55 2 12.017 2zm5.885 15.885a8.354 8.354 0 0 1-5.885 2.44H12a8.36 8.36 0 0 1-4.264-1.166l-.306-.183-3.176.86.848-3.096-.2-.318A8.348 8.348 0 0 1 3.67 12.02c0-4.605 3.744-8.35 8.35-8.35 2.23 0 4.326.87 5.902 2.448a8.29 8.29 0 0 1 2.447 5.9c0 2.23-.87 4.326-2.467 5.867z" />
-                    </svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.017 2C6.484 2 2 6.485 2 12.017c0 1.86.502 3.61 1.377 5.11L2 22l4.998-1.351a9.965 9.965 0 0 0 5.02 1.351h.004C17.55 22 22 17.514 22 12.017 22 6.485 17.55 2 12.017 2zm5.885 15.885a8.354 8.354 0 0 1-5.885 2.44H12a8.36 8.36 0 0 1-4.264-1.166l-.306-.183-3.176.86.848-3.096-.2-.318A8.348 8.348 0 0 1 3.67 12.02c0-4.605 3.744-8.35 8.35-8.35 2.23 0 4.326.87 5.902 2.448a8.29 8.29 0 0 1 2.447 5.9c0 2.23-.87 4.326-2.467 5.867z"/></svg>
                     {sendingWhatsapp ? "Sending..." : "Send Bill on WhatsApp"}
                   </button>
                 )}
@@ -294,9 +274,7 @@ const BillingList = () => {
       setBillings(applyStatus);
       setFilteredBillings(applyStatus);
       toast.success(
-        nextStatus === "paid"
-          ? "Bill marked as paid"
-          : "Bill marked as not paid",
+        nextStatus === "paid" ? "Bill marked as paid" : "Bill marked as not paid",
       );
     } catch (err) {
       console.error(err);
