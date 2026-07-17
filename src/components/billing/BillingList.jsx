@@ -8,7 +8,7 @@ import BillingModal from "./BillingModal";
 import Pagination from "./Pagination";
 import SearchInput from "../common/SearchInput";
 import { LoadingSpinner } from "../common/LoadingSpinner";
-import { Download, MoreVertical, Eye, Trash2, CheckCircle2 } from "lucide-react";
+import { Download, MoreVertical, Eye, Trash2, CheckCircle2, MessageCircle } from "lucide-react";
 import CustomerAvatar from "../common/CustomerAvatar";
 
 const PAGE_SIZE = 8;
@@ -28,10 +28,11 @@ function BilledByCell({ billedBy }) {
 }
 
 // ─── TABLE ROW ─────────
-function BillRow({ bill, onOpen, onDeleteComplete, onTogglePaid }) {
+function BillRow({ bill, onOpen, onDeleteComplete, onTogglePaid, onSendWhatsapp }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const [sendingWhatsapp, setSendingWhatsapp] = useState(false);
   const isPaid = bill.payment_status === "paid";
 
   const formattedDate = bill.created_at
@@ -151,6 +152,22 @@ function BillRow({ bill, onOpen, onDeleteComplete, onTogglePaid }) {
                   </button>
                 )}
 
+                {isPaid && (
+                  <button
+                    disabled={sendingWhatsapp}
+                    onClick={async () => {
+                      setSendingWhatsapp(true);
+                      await onSendWhatsapp(bill);
+                      setSendingWhatsapp(false);
+                      setMenuOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
+                  >
+                    <MessageCircle size={14} />
+                    {sendingWhatsapp ? "Sending..." : "Send Bill on WhatsApp"}
+                  </button>
+                )}
+
                 {!isPaid && (
                   <button
                     onClick={() => {
@@ -262,6 +279,24 @@ const BillingList = () => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to update payment status");
+    }
+  };
+
+  const handleSendWhatsapp = async (bill) => {
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/api/billings/${bill.id}/send-whatsapp`,
+      );
+      if (res.data?.skipped) {
+        toast.error(res.data?.message || "WhatsApp is not configured");
+        return;
+      }
+      toast.success("Bill sent on WhatsApp");
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err.response?.data?.error || "Failed to send bill on WhatsApp",
+      );
     }
   };
 
@@ -492,6 +527,7 @@ const BillingList = () => {
                       onOpen={openModal}
                       onDeleteComplete={removeBillFromUi}
                       onTogglePaid={handleTogglePaid}
+                      onSendWhatsapp={handleSendWhatsapp}
                     />
                   ))}
                 </tbody>
