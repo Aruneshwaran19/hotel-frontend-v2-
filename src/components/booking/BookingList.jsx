@@ -365,10 +365,7 @@ export default function BookingList({
 
       toast.success("Checkout completed successfully");
 
-      setCheckoutResult({
-        billingId: checkoutRes.data?.billing_id,
-        customerName: checkoutBooking?.customer_name,
-      });
+      resetCheckoutState();
     } catch (err) {
       console.error(err);
       toast.error(

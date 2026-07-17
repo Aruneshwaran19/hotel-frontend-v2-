@@ -1,719 +1,576 @@
-import { useState, useEffect } from "react";
-import auth from "../../auth/axiosInstance";
-import BookingTable from "./BookingTable";
-import { LoadingSpinner } from "../common/LoadingSpinner";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { API_BASE_URL } from "../../config";
 import { toast } from "react-toastify";
-import { DEFAULT_GST_RATES } from "../../utils/billingUtils";
-import { downloadBillingPdf } from "../../utils/whatsappBill";
+import { useAuth } from "../../hooks/useAuth";
 
-export default function BookingList({
-  bookings,
-  loading,
-  onDelete,
-  onStatusUpdate,
-  onEdit,
-  onCheckoutComplete,
-  onGoToBilling,
-}) {
-  const [checkoutBooking, setCheckoutBooking] = useState(null);
-  const [checkoutData, setCheckoutData] = useState({});
-  const [checkoutResult, setCheckoutResult] = useState(null);
-  const [checkoutBusy, setCheckoutBusy] = useState(false);
-  const [pdfDownloading, setPdfDownloading] = useState(false);
-  const [availableAddons, setAvailableAddons] = useState([]);
-  const [statusUpdatingId, setStatusUpdatingId] = useState(null);
-  const [selectedAddonId, setSelectedAddonId] = useState("");
-  const [kitchenTotal, setKitchenTotal] = useState(0);
-  const [addonTotal, setAddonTotal] = useState(0);
+import BillingModal from "./BillingModal";
+import Pagination from "./Pagination";
+import SearchInput from "../common/SearchInput";
+import { LoadingSpinner } from "../common/LoadingSpinner";
+import { Download, MoreVertical, Eye, Trash2, CheckCircle2 } from "lucide-react";
+import CustomerAvatar from "../common/CustomerAvatar";
 
-  const normalize = (str) =>
-    String(str || "")
-      .toLowerCase()
-      .replace(/\s+/g, "_");
+const PAGE_SIZE = 8;
 
-  const getLocalDateTimeInput = () => {
-    const d = new Date();
-    const pad = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+// ─── BILLED BY CELL ────
+function BilledByCell({ billedBy }) {
+  const name = billedBy && billedBy.trim() !== "" ? billedBy : "Admin User";
+  const initial = name[0].toUpperCase();
+  return (
+    <div className="flex items-center gap-2">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-600 uppercase">
+        {initial}
+      </span>
+      <span className="text-sm text-gray-700 whitespace-nowrap">{name}</span>
+    </div>
+  );
+}
+
+function BillRow({ bill, onOpen, onDeleteComplete, onTogglePaid, onSendWhatsapp }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const [sendingWhatsapp, setSendingWhatsapp] = useState(false);
+  const isPaid = bill.payment_status === "paid";
+
+  const formattedDate = bill.created_at
+    ? new Date(bill.created_at).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
+
+  return (
+    <tr className="border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
+      <td className="py-3 pl-4 pr-3 text-sm font-medium text-gray-700 whitespace-nowrap">
+        #{bill.id}
+      </td>
+      <td className="px-3 py-3 whitespace-nowrap">
+        <span className="inline-block rounded bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-600">
+          {bill.booking_id}
+        </span>
+      </td>
+      <td className="px-3 py-3 whitespace-nowrap">
+        <div className="flex items-center gap-2">
+          <CustomerAvatar
+            photo={bill.customer_photo}
+            name={bill.customer_name}
+            size="md"
+          />
+          <span className="text-sm font-medium text-gray-800">
+            {bill.customer_name || "—"}
+          </span>
+        </div>
+      </td>
+      <td className="px-3 py-3 whitespace-nowrap">
+        <div className="flex items-center gap-1.5">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-[10px] text-gray-500">
+            ⌂
+          </span>
+          <span className="text-sm text-gray-700">
+            {bill.room_number ? bill.room_number : "—"}
+          </span>
+        </div>
+      </td>
+      <td className="px-3 py-3 whitespace-nowrap">
+        <div className="text-sm text-gray-700">{formattedDate}</div>
+        <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+          Created
+        </div>
+      </td>
+      <td className="px-3 py-3 whitespace-nowrap">
+        <div className="text-sm font-medium text-gray-800">
+          ₹{Number(bill.advance_paid || 0).toLocaleString("en-IN")}
+        </div>
+        <div className="text-[10px] font-semibold uppercase tracking-wide text-green-600">
+          Paid
+        </div>
+      </td>
+      <td className="px-3 py-3 whitespace-nowrap">
+        <BilledByCell billedBy={bill.billed_by} />
+      </td>
+      <td className="px-3 py-3 whitespace-nowrap">
+        <div className="text-sm font-bold text-gray-900">
+          ₹{Number(bill.total_amount || 0).toLocaleString("en-IN")}
+        </div>
+        <div
+          className={`text-[10px] font-semibold uppercase tracking-wide ${
+            isPaid ? "text-green-600" : "text-red-500"
+          }`}
+        >
+          {isPaid ? "Paid" : "Not Paid"}
+        </div>
+      </td>
+
+      {/* Actions */}
+      <td className="py-3 pl-3 pr-4 whitespace-nowrap">
+        <div className="relative flex justify-end">
+          <button
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setMenuPos({ top: rect.bottom + 4, left: rect.right - 192 });
+              setMenuOpen((p) => !p);
+              setConfirmDelete(false);
+            }}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+          >
+            <MoreVertical size={16} />
+          </button>
+
+          {menuOpen && (
+            <>
+              {/* invisible backdrop to close on outside click */}
+              <div
+                className="fixed inset-0 z-[998]"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setConfirmDelete(false);
+                }}
+              />
+              <div
+                style={{
+                  position: "fixed",
+                  top: menuPos.top,
+                  left: menuPos.left,
+                  zIndex: 999,
+                  width: 192,
+                }}
+                className="rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden"
+              >
+                {isPaid && (
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onOpen(bill);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-blue-50"
+                  >
+                    <Eye size={14} /> Generate Bill
+                  </button>
+                )}
+
+                {/* WhatsApp bill sending disabled per client request
+                {isPaid && (
+                  <button
+                    disabled={sendingWhatsapp}
+                    onClick={async () => {
+                      setSendingWhatsapp(true);
+                      await onSendWhatsapp(bill);
+                      setSendingWhatsapp(false);
+                      setMenuOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
+                  >
+                    <svg className="shrink-0" style={{ width: 14, height: 14, minWidth: 14 }} viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.017 2C6.484 2 2 6.485 2 12.017c0 1.86.502 3.61 1.377 5.11L2 22l4.998-1.351a9.965 9.965 0 0 0 5.02 1.351h.004C17.55 22 22 17.514 22 12.017 22 6.485 17.55 2 12.017 2zm5.885 15.885a8.354 8.354 0 0 1-5.885 2.44H12a8.36 8.36 0 0 1-4.264-1.166l-.306-.183-3.176.86.848-3.096-.2-.318A8.348 8.348 0 0 1 3.67 12.02c0-4.605 3.744-8.35 8.35-8.35 2.23 0 4.326.87 5.902 2.448a8.29 8.29 0 0 1 2.447 5.9c0 2.23-.87 4.326-2.467 5.867z"/></svg>
+                    {sendingWhatsapp ? "Sending..." : "Send Bill on WhatsApp"}
+                  </button>
+                )}
+                */}
+
+
+
+                {!isPaid && (
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onTogglePaid(bill);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-green-600 hover:bg-green-50"
+                  >
+                    <CheckCircle2 size={14} /> Mark as Paid
+                  </button>
+                )}
+
+                {!confirmDelete ? (
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 size={14} /> Delete Bill
+                  </button>
+                ) : (
+                  <div className="px-3 py-2 bg-red-50 border-t border-red-100">
+                    <p className="text-xs text-red-600 font-medium mb-2">
+                      Sure you want to delete?
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          axios
+                            .delete(`${API_BASE_URL}/api/billings/${bill.id}`, {
+                              withCredentials: true,
+                            })
+                            .then(() => {
+                              toast.success("Bill deleted successfully");
+                              setMenuOpen(false);
+                              setConfirmDelete(false);
+                              if (onDeleteComplete) onDeleteComplete(bill.id);
+                            })
+                            .catch((err) => {
+                              console.error(err);
+                              toast.error("Failed to delete bill");
+                            });
+                        }}
+                        className="flex-1 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete(false)}
+                        className="flex-1 py-1 bg-gray-200 text-gray-700 text-xs rounded-lg hover:bg-gray-300"
+                      >
+                        No
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// ─── BILLING LIST ───────
+const BillingList = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toLowerCase() === "admin";
+
+  const [billings, setBillings] = useState([]);
+  const [filteredBillings, setFilteredBillings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedBill, setSelectedBill] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState("");
+  const [exportEndDate, setExportEndDate] = useState("");
+  const [availableAddOns, setAvailableAddOns] = useState([]);
+  const [form, setForm] = useState({
+    room_price: 0,
+    add_ons: [],
+    kitchen_orders: [],
+    discount: 0,
+  });
+
+  const removeBillFromUi = (billId) => {
+    setBillings((prev) => prev.filter((b) => b.id !== billId));
+    setFilteredBillings((prev) => prev.filter((b) => b.id !== billId));
   };
 
-  const parseAddOns = (addOns) => {
-    if (!addOns) return [];
-    if (Array.isArray(addOns)) {
-      return addOns.map((a) =>
-        typeof a === "object" && a !== null
-          ? a.description || a.label || a.name || ""
-          : a,
+  const handleTogglePaid = async (bill) => {
+    const nextStatus = bill.payment_status === "paid" ? "unpaid" : "paid";
+    try {
+      await axios.patch(
+        `${API_BASE_URL}/api/billings/${bill.id}/payment-status`,
+        { status: nextStatus },
+      );
+      const applyStatus = (list) =>
+        list.map((b) =>
+          b.id === bill.id ? { ...b, payment_status: nextStatus } : b,
+        );
+      setBillings(applyStatus);
+      setFilteredBillings(applyStatus);
+      toast.success(
+        nextStatus === "paid" ? "Bill marked as paid" : "Bill marked as not paid",
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update payment status");
+    }
+  };
+
+  const handleSendWhatsapp = async (bill) => {
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/api/billings/${bill.id}/send-whatsapp`,
+      );
+      if (res.data?.skipped) {
+        toast.error(res.data?.message || "WhatsApp is not configured");
+        return;
+      }
+      toast.success("Bill sent on WhatsApp");
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err.response?.data?.error || "Failed to send bill on WhatsApp",
       );
     }
-    if (typeof addOns === "string") {
-      try {
-        const parsed = JSON.parse(addOns);
-        if (!Array.isArray(parsed)) return [];
-        return parsed.map((a) =>
-          typeof a === "object" && a !== null
-            ? a.description || a.label || a.name || ""
-            : a,
-        );
-      } catch {
-        return [];
-      }
-    }
-    return [];
   };
 
-  const formatDate = (d) =>
-    d
-      ? new Date(d).toLocaleString("en-IN", {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
-      : "-";
-
-  const recomputeTotals = (
-    price,
-    stayDays,
-    addons,
-    currentKitchenTotal = 0,
-    { includeGst = false } = {},
-  ) => {
-    const roomSubtotal = Number(price || 0) * Number(stayDays || 1);
-    const kitchenSubtotal = Number(currentKitchenTotal || 0);
-    const addonSubtotal = Object.values(addons || {}).reduce(
-      (sum, addon) =>
-        sum + (addon.selected && addon.price ? Number(addon.price) : 0),
-      0,
-    );
-
-    const calculateGST = (amount, type) => {
-      let rate = DEFAULT_GST_RATES[type];
-      if (type === "room") {
-        const perNightAmount = amount / (stayDays || 1);
-        rate =
-          perNightAmount > DEFAULT_GST_RATES.room.threshold
-            ? DEFAULT_GST_RATES.room.high
-            : DEFAULT_GST_RATES.room.low;
-      }
-      return Number((amount * rate).toFixed(2));
-    };
-
-    const roomGst = includeGst ? calculateGST(roomSubtotal, "room") : 0;
-    const kitchenGst = includeGst
-      ? calculateGST(kitchenSubtotal, "kitchen")
-      : 0;
-    const addonGst = includeGst ? calculateGST(addonSubtotal, "addon") : 0;
-
-    const subtotal = roomSubtotal + kitchenSubtotal + addonSubtotal;
-    const gstTotal = roomGst + kitchenGst + addonGst;
-    const totalAmount = Number((subtotal + gstTotal).toFixed(2));
-
-    return {
-      roomTotal: roomSubtotal,
-      roomGst,
-      kitchenTotal: kitchenSubtotal,
-      kitchenGst,
-      addonTotal: addonSubtotal,
-      addonGst,
-      gstTotal,
-      subtotal,
-      totalAmount,
-    };
-  };
-
-  const getCheckoutTotals = ({
-    roomPrice,
-    stayDays,
-    addons,
-    currentKitchenTotal = 0,
-    discount = 0,
-    advancePaid = 0,
-    includeGst = false,
-  }) => {
-    const totals = recomputeTotals(
-      roomPrice,
-      stayDays,
-      addons,
-      currentKitchenTotal,
-      { includeGst },
-    );
-    return {
-      ...totals,
-      balanceAmount: Number(
-        (
-          Number(totals.totalAmount || 0) -
-          Number(discount || 0) -
-          Number(advancePaid || 0)
-        ).toFixed(2),
-      ),
-    };
-  };
-
-  const resetCheckoutState = () => {
-    setCheckoutBooking(null);
-    setCheckoutData({});
-    setCheckoutResult(null);
-    setCheckoutBusy(false);
-    setPdfDownloading(false);
-    setKitchenTotal(0);
-    setAddonTotal(0);
-    setSelectedAddonId("");
-  };
-
-  const buildAddonMap = (booking, previewAddOns = []) => {
-    const addons = {};
-    previewAddOns.forEach((addon) => {
-      const key = normalize(addon.name);
-      addons[key] = {
-        label: addon.name,
-        price: Number(addon.price || 0),
-        selected: true,
-      };
-    });
-    parseAddOns(booking.add_ons).forEach((name) => {
-      const addon = availableAddons.find((item) => item.name === name);
-      const key = normalize(name);
-      if (!addons[key]) {
-        addons[key] = {
-          label: name,
-          price: Number(addon?.price || 0),
-          selected: true,
-        };
-      }
-    });
-    return addons;
-  };
-
-  useEffect(() => {
-    fetchAddons();
-  }, []);
-
-  const fetchAddons = async () => {
+  const fetchBills = async () => {
+    setLoading(true);
     try {
-      const res = await auth.get(`/addons`);
-      setAvailableAddons(res.data || []);
+      const res = await axios.get(`${API_BASE_URL}/api/billings`);
+      const billsArray = res.data?.billings || res.data || [];
+      if (!Array.isArray(billsArray)) {
+        toast.error("Invalid response format");
+        setBillings([]);
+        setFilteredBillings([]);
+        return;
+      }
+      setBillings(billsArray);
+      setFilteredBillings(billsArray);
+      setCurrentPage(1);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch bills");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAddOns = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/addons`);
+      setAvailableAddOns(res.data || []);
     } catch (err) {
       console.error("Failed to fetch add-ons", err);
     }
   };
 
-  const openCheckoutById = async (id) => {
-    try {
-      const res = await auth.get(`/bookings/${id}`);
-      await openCheckout(res.data);
-    } catch {
-      toast.error("Failed to load booking for checkout");
-    }
-  };
+  useEffect(() => {
+    fetchBills();
+    fetchAddOns();
+  }, []);
 
-  const openCheckout = async (booking) => {
-    const d1 = new Date(booking.check_in);
-    const d2 = new Date(booking.check_out);
-    const msPerDay = 1000 * 60 * 60 * 24;
-    const stayDays = Math.max(
-      Math.round(
-        (new Date(d2.getFullYear(), d2.getMonth(), d2.getDate()) -
-          new Date(d1.getFullYear(), d1.getMonth(), d1.getDate())) /
-          msPerDay,
-      ),
-      1,
-    );
+  useEffect(() => {
+    setSearchLoading(true);
+    const timer = setTimeout(() => {
+      if (!search.trim()) {
+        setFilteredBillings(billings);
+      } else {
+        const text = search.toLowerCase();
+        setFilteredBillings(
+          billings.filter(
+            (b) =>
+              b.booking_id?.toLowerCase().includes(text) ||
+              b.customer_name?.toLowerCase().includes(text),
+          ),
+        );
+      }
+      setCurrentPage(1);
+      setSearchLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, billings]);
 
-    const roomPrice = Number(booking.price || 0);
-    const roomTotal = roomPrice * stayDays;
-    const advancePaid = Number(booking.advance_paid || 0);
-
-    let preview = null;
-    try {
-      const previewRes = await auth.get(
-        `/billings/preview/${booking.booking_id}`,
-      );
-      preview = previewRes.data;
-    } catch (err) {
-      console.error("Failed to load billing preview", err);
-    }
-
-    const addons = buildAddonMap(booking, preview?.add_ons || []);
-    const nextKitchenTotal = Number(
-      preview?.kitchenTotal || preview?.kitchen_total || 0,
-    );
-    const resolvedAdvancePaid = Number(
-      preview?.advancePaid || preview?.advance_paid || advancePaid,
-    );
-    const resolvedDiscount = Number(booking.discount || 0);
-    const checkoutTotals = getCheckoutTotals({
-      roomPrice,
-      stayDays,
-      addons,
-      currentKitchenTotal: nextKitchenTotal,
-      discount: resolvedDiscount,
-      advancePaid: resolvedAdvancePaid,
-      includeGst: false,
-    });
-
-    setKitchenTotal(nextKitchenTotal);
-    setAddonTotal(checkoutTotals.addonTotal);
-    setSelectedAddonId("");
-    setCheckoutBooking(booking);
-    setCheckoutData({
-      check_out: getLocalDateTimeInput(),
-      roomPrice,
-      price: roomTotal,
-      stayDays,
-      add_ons: addons,
-      kitchenTotal: nextKitchenTotal,
-      advancePaid: resolvedAdvancePaid,
-      status: booking.status,
-      gstNumber: booking.gst_number || "",
-      discount: resolvedDiscount,
-      ...checkoutTotals,
-    });
-  };
-
-  const handleAddonSelect = (e) => {
-    const currentAddonId = e.target.value;
-    if (!currentAddonId) return;
-
-    const addon = availableAddons.find((item) => item.id == currentAddonId);
-    if (!addon) return;
-
-    const key = normalize(addon.name);
-    if (checkoutData.add_ons?.[key]) {
-      toast.error("Addon already selected");
-      setSelectedAddonId("");
-      return;
-    }
-
-    const updatedAddons = {
-      ...checkoutData.add_ons,
-      [key]: { label: addon.name, price: Number(addon.price), selected: true },
-    };
-    const checkoutTotals = getCheckoutTotals({
-      roomPrice: checkoutData.roomPrice,
-      stayDays: checkoutData.stayDays,
-      addons: updatedAddons,
-      currentKitchenTotal: kitchenTotal,
-      discount: checkoutData.discount,
-      advancePaid: checkoutData.advancePaid,
-      includeGst: false,
-    });
-
-    setAddonTotal(checkoutTotals.addonTotal);
-    setCheckoutData((prev) => ({
-      ...prev,
-      add_ons: updatedAddons,
-      ...checkoutTotals,
-    }));
-    setSelectedAddonId("");
-    toast.success(`${addon.name} added`);
-  };
-
-  const toggleAddon = (key) => {
-    const updatedAddons = {
-      ...checkoutData.add_ons,
-      [key]: {
-        ...checkoutData.add_ons[key],
-        selected: !checkoutData.add_ons[key].selected,
-      },
-    };
-    const checkoutTotals = getCheckoutTotals({
-      roomPrice: checkoutData.roomPrice,
-      stayDays: checkoutData.stayDays,
-      addons: updatedAddons,
-      currentKitchenTotal: kitchenTotal,
-      discount: checkoutData.discount,
-      advancePaid: checkoutData.advancePaid,
-      includeGst: false,
-    });
-
-    setAddonTotal(checkoutTotals.addonTotal);
-    setCheckoutData((prev) => ({
-      ...prev,
-      add_ons: updatedAddons,
-      ...checkoutTotals,
+  const parseBillAddOns = (addOns) => {
+    if (!Array.isArray(addOns)) return [];
+    return addOns.map((a) => ({
+      name: a.name,
+      qty: Number(a.qty) || 1,
+      price: Number(a.price) || 0,
     }));
   };
 
-  const confirmCheckout = async () => {
-    try {
-      setCheckoutBusy(true);
-
-      const finalAddOns = Object.values(checkoutData.add_ons || {})
-        .filter((addon) => addon.selected)
-        .map((addon) => ({ name: addon.label, price: addon.price }));
-
-      const { addonTotal: nextAddonTotal, totalAmount } = recomputeTotals(
-        checkoutData.roomPrice,
-        checkoutData.stayDays,
-        checkoutData.add_ons,
-        kitchenTotal,
-        { includeGst: true },
-      );
-
-      const checkoutRes = await auth.post(
-        `/bookings/${checkoutBooking.id}/checkout`,
-        {
-          check_out: checkoutData.check_out,
-          add_ons: finalAddOns,
-          total_amount: totalAmount,
-          discount: Number(checkoutData.discount || 0),
-          gst_number: checkoutData.gstNumber || undefined,
-        },
-      );
-
-      setAddonTotal(nextAddonTotal);
-      onCheckoutComplete?.(checkoutBooking.id);
-
-      toast.success("Checkout completed successfully");
-
-      resetCheckoutState();
-    } catch (err) {
-      console.error(err);
-      toast.error(
-        "Checkout failed: " + (err.response?.data?.error || err.message),
-      );
-    } finally {
-      setCheckoutBusy(false);
-    }
-  };
-
-  const handleDownloadCheckoutPdf = async () => {
-    if (!checkoutResult?.billingId) return;
-
-    try {
-      setPdfDownloading(true);
-      await downloadBillingPdf(
-        checkoutResult.billingId,
-        checkoutResult.customerName,
-      );
-      toast.success("Invoice downloaded");
-    } catch (err) {
-      console.error(err);
-      toast.error(
-        err.response?.data?.error ||
-          err.message ||
-          "Failed to download invoice",
-      );
-    } finally {
-      setPdfDownloading(false);
-    }
-  };
-
-  const handleStatusChange = async (id, newStatus) => {
-    const booking = bookings.find((b) => b.id === id);
-    if (
-      newStatus === "Checked-out" &&
-      booking.status?.toLowerCase() !== "checked-in"
-    ) {
-      toast.error("Cannot checkout - booking must be Checked-in first");
+  const openModal = async (bill) => {
+    if (!bill?.id) {
+      toast.error("Invalid bill");
       return;
     }
-
-    if (newStatus === "Checked-out") {
-      openCheckoutById(id);
-      return;
-    }
-
     try {
-      setStatusUpdatingId(id);
-      toast.info(`Updating status to ${newStatus}...`);
-      await onStatusUpdate(id, { status: newStatus });
-      toast.success(`Status updated to ${newStatus}`);
-    } catch {
-      toast.error("Status update failed");
-    } finally {
-      setStatusUpdatingId(null);
+      const res = await axios.get(`${API_BASE_URL}/api/billings/${bill.id}`);
+      setSelectedBill(res.data);
+      const roomCharges = (res.data.lines?.room ?? []).reduce(
+        (sum, item) => sum + Number(item?.total || 0),
+        0,
+      );
+      setForm({
+        room_price: roomCharges,
+        add_ons: parseBillAddOns(res.data.add_ons),
+        kitchen_orders: res.data.kitchen_orders || [],
+        discount: Number(res.data.discount || 0),
+      });
+      setModalOpen(true);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch bill details");
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  const handleModalDeleteComplete = (billId) => {
+    removeBillFromUi(billId);
+    setSelectedBill(null);
+    setModalOpen(false);
+  };
 
-  if (!bookings?.length) {
-    return (
-      <div className="text-center text-gray-500 mt-20">
-        <p className="text-xl font-medium">No bookings found</p>
-      </div>
-    );
-  }
+  const handleExportCSV = async () => {
+    if (!isAdmin) return;
+    try {
+      if (
+        exportStartDate &&
+        exportEndDate &&
+        new Date(exportStartDate) > new Date(exportEndDate)
+      ) {
+        toast.error("Start date cannot be after end date");
+        return;
+      }
+      const token = localStorage.getItem("token");
+      const params = new URLSearchParams();
+      if (exportStartDate) params.set("startDate", exportStartDate);
+      if (exportEndDate) params.set("endDate", exportEndDate);
+
+      const exportUrl = params.toString()
+        ? `${API_BASE_URL}/api/billings/export/csv?${params.toString()}`
+        : `${API_BASE_URL}/api/billings/export/csv`;
+
+      const response = await fetch(exportUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error("Export failed");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "billing-statements.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export CSV");
+    }
+  };
+
+  const totalPages = Math.ceil(filteredBillings.length / PAGE_SIZE);
+  const paginatedBills = filteredBillings.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
 
   return (
-    <>
-      <BookingTable
-        bookings={bookings}
-        parseAddOns={parseAddOns}
-        formatDate={formatDate}
-        onDelete={onDelete}
-        onStatusChange={handleStatusChange}
-        onEdit={onEdit}
-      />
+    <div className="space-y-5">
+      {/* ── Header ── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-gray-900 md:text-3xl">
+          Billing
+        </h1>
 
-      {(checkoutBooking || checkoutResult) && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center z-50 overflow-y-auto p-4">
-          <div className="bg-white p-6 rounded-xl max-w-2xl w-full my-6 max-h-[90vh] overflow-y-auto">
-            {checkoutResult ? (
-              <>
-                <h3 className="text-xl font-semibold mb-2 text-green-700">
-                  Checkout Complete
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Guest: {checkoutResult.customerName || "Guest"}
-                  {checkoutResult.customerContact
-                    ? ` · ${checkoutResult.customerContact}`
-                    : ""}
-                </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
+          {isAdmin && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="date"
+                value={exportStartDate}
+                onChange={(e) => setExportStartDate(e.target.value)}
+                className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm sm:flex-none sm:w-auto"
+              />
+              <input
+                type="date"
+                value={exportEndDate}
+                onChange={(e) => setExportEndDate(e.target.value)}
+                className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm sm:flex-none sm:w-auto"
+              />
+              <button
+                onClick={handleExportCSV}
+                className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#0F172A] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#020617] active:scale-95"
+              >
+                <Download size={15} />
+                Export CSV
+              </button>
+            </div>
+          )}
 
-                <div className="bg-gray-50 border rounded-lg p-4 mb-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Bill total</span>
-                    <span className="font-semibold">
-                      ₹
-                      {Number(
-                        checkoutResult.summary?.total_amount ||
-                          checkoutResult.summary?.totalAmount ||
-                          0,
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Balance payable</span>
-                    <span className="font-semibold text-red-600">
-                      ₹
-                      {Number(
-                        checkoutResult.summary?.balance ||
-                          checkoutResult.summary?.balanceAmount ||
-                          0,
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap justify-end gap-3">
-                  <button
-                    onClick={handleDownloadCheckoutPdf}
-                    disabled={pdfDownloading}
-                    className="bg-[#0A1B4D] text-white px-4 py-2 rounded disabled:opacity-50"
-                  >
-                    {pdfDownloading ? "Downloading..." : "Download Invoice PDF"}
-                  </button>
-                  {onGoToBilling && (
-                    <button
-                      onClick={() => {
-                        onGoToBilling();
-                        resetCheckoutState();
-                      }}
-                      className="border px-4 py-2 rounded"
-                    >
-                      Go to Billing
-                    </button>
-                  )}
-                  <button
-                    onClick={resetCheckoutState}
-                    className="border px-4 py-2 rounded"
-                  >
-                    Close
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 className="text-xl font-semibold mb-4">Final Checkout</h3>
-
-                <p className="mb-2">
-                  Room: ₹{checkoutData.roomPrice} × {checkoutData.stayDays}{" "}
-                  nights = ₹{checkoutData.price}
-                </p>
-
-                <div className="mb-3">
-                  <label className="block text-sm font-medium mb-1">
-                    GST Number (optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={checkoutData.gstNumber || ""}
-                    onChange={(e) =>
-                      setCheckoutData((prev) => ({
-                        ...prev,
-                        gstNumber: e.target.value,
-                      }))
-                    }
-                    placeholder="GSTIN"
-                    className="w-full border px-3 py-2 rounded"
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="block text-sm font-medium mb-1">
-                    Discount (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={checkoutData.discount || 0}
-                    onChange={(e) => {
-                      const val = Number(e.target.value) || 0;
-                      setCheckoutData((prev) => {
-                        const checkoutTotals = getCheckoutTotals({
-                          roomPrice: prev.roomPrice,
-                          stayDays: prev.stayDays,
-                          addons: prev.add_ons,
-                          currentKitchenTotal: kitchenTotal,
-                          discount: val,
-                          advancePaid: prev.advancePaid,
-                          includeGst: false,
-                        });
-                        return { ...prev, discount: val, ...checkoutTotals };
-                      });
-                    }}
-                    className="w-full border px-3 py-2 rounded"
-                  />
-                </div>
-
-                <p className="font-medium mb-2">Add-ons:</p>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {Object.entries(checkoutData.add_ons || {})
-                    .filter(([, value]) => value.selected)
-                    .map(([key, value]) => (
-                      <div
-                        key={key}
-                        className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-2 rounded-full text-sm shadow-sm hover:bg-blue-200 transition-all group"
-                      >
-                        <span>
-                          {value.label} (₹{value.price})
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleAddon(key);
-                          }}
-                          className="ml-1 text-red-500 hover:text-red-700 group-hover:scale-110 transition-transform"
-                          title="Remove"
-                        >
-                          x
-                        </button>
-                      </div>
-                    ))}
-                </div>
-
-                <div className="mb-3">
-                  <label className="block text-sm font-medium mb-1">
-                    Select Add-on
-                  </label>
-                  <select
-                    value={selectedAddonId}
-                    onChange={handleAddonSelect}
-                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">-- Choose add-on --</option>
-                    {availableAddons.map((addon) => {
-                      const key = normalize(addon.name);
-                      const exists = checkoutData.add_ons?.[key];
-                      return (
-                        <option
-                          key={addon.id}
-                          value={addon.id}
-                          disabled={!!exists}
-                        >
-                          {addon.name} (₹{addon.price})
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-
-                <div className="mt-4 mb-6 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-4 space-y-2">
-                  <h3 className="font-semibold text-gray-800 mb-3">
-                    Bill Summary
-                  </h3>
-
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-600">Room Charges:</span>
-                    <span className="font-medium">
-                      ₹{Number(checkoutData.roomTotal || 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <div
-                    className={`${Number(checkoutData.roomGst || 0) > 0 ? "flex" : "hidden"} justify-between text-xs`}
-                  >
-                    <span className="text-gray-400 italic">Room GST:</span>
-                    <span className="text-gray-500 font-medium text-[10px]">
-                      ₹{Number(checkoutData.roomGst || 0).toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-600">Kitchen Charges:</span>
-                    <span className="font-medium">
-                      ₹
-                      {Number(
-                        checkoutData.kitchenTotalReturn ||
-                          checkoutData.kitchenTotal ||
-                          0,
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                  <div
-                    className={`${Number(checkoutData.kitchenGst || 0) > 0 ? "flex" : "hidden"} justify-between text-xs`}
-                  >
-                    <span className="text-gray-400 italic">Kitchen GST:</span>
-                    <span className="text-gray-500 font-medium text-[10px]">
-                      ₹{Number(checkoutData.kitchenGst || 0).toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-600">Add-on Charges:</span>
-                    <span className="font-medium">
-                      ₹{Number(checkoutData.addonTotal || 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <hr className="border-blue-100 my-2" />
-
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-700">Subtotal:</span>
-                    <span className="font-medium">
-                      ₹{Number(checkoutData.totalAmount || 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm text-red-500">
-                    <span className="text-gray-700">Discount:</span>
-                    <span className="font-medium">
-                      - ₹{Number(checkoutData.discount || 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm text-green-600">
-                    <span>Advance Paid:</span>
-                    <span>
-                      - ₹{Number(checkoutData.advancePaid || 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="border-t border-blue-200 pt-2 flex justify-between font-bold text-red-600">
-                    <span>Balance Payable:</span>
-                    <span className="text-lg">
-                      ₹{Number(checkoutData.balanceAmount || 0).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3 mt-4">
-                  <button
-                    onClick={resetCheckoutState}
-                    className="border px-4 py-2 rounded"
-                    disabled={checkoutBusy}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => confirmCheckout()}
-                    disabled={checkoutBusy}
-                    className="bg-[#0A1B4D] text-white px-4 py-2 rounded disabled:opacity-50"
-                  >
-                    {checkoutBusy ? "Processing..." : "Confirm Checkout"}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search bookings or customers..."
+            className="w-full sm:w-64 md:w-80"
+          />
         </div>
+      </div>
+
+      {/* ── Content ── */}
+      {loading || searchLoading ? (
+        <LoadingSpinner />
+      ) : paginatedBills.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white py-16 text-center">
+          <p className="text-gray-400 text-sm">No billing records found.</p>
+        </div>
+      ) : (
+        <>
+          {/* ── Scrollable Table (all screen sizes) ── */}
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full min-w-[780px] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/80">
+                    {[
+                      "Bill ID",
+                      "Booking ID",
+                      "Customer",
+                      "Room",
+                      "Date",
+                      "Advance",
+                      "Billed By",
+                      "Total",
+                      "Actions",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400 first:pl-4 last:pr-4 last:text-right whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedBills.map((bill) => (
+                    <BillRow
+                      key={bill.id}
+                      bill={bill}
+                      onOpen={openModal}
+                      onDeleteComplete={removeBillFromUi}
+                      onTogglePaid={handleTogglePaid}
+                      onSendWhatsapp={handleSendWhatsapp}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="border-t border-gray-100 px-4 py-3 text-xs text-gray-400">
+              Showing{" "}
+              <span className="font-semibold text-gray-600">
+                {filteredBillings.length}
+              </span>{" "}
+              records
+            </div>
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          )}
+        </>
       )}
-    </>
+
+      {/* ── Modal ── */}
+      <BillingModal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedBill(null);
+        }}
+        selectedBill={selectedBill}
+        form={form}
+        setForm={setForm}
+        availableAddOns={availableAddOns}
+        onDeleteComplete={handleModalDeleteComplete}
+      />
+    </div>
   );
-}
+};
+
+export default BillingList;
