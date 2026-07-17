@@ -152,6 +152,7 @@ function BillRow({ bill, onOpen, onDeleteComplete, onTogglePaid, onSendWhatsapp 
                   </button>
                 )}
 
+                {/* WhatsApp bill sending disabled per client request
                 {isPaid && (
                   <button
                     disabled={sendingWhatsapp}
@@ -167,6 +168,9 @@ function BillRow({ bill, onOpen, onDeleteComplete, onTogglePaid, onSendWhatsapp 
                     {sendingWhatsapp ? "Sending..." : "Send Bill on WhatsApp"}
                   </button>
                 )}
+                */}
+
+
 
                 {!isPaid && (
                   <button
