@@ -11,8 +11,8 @@ import {
 
 const BORDER_COLOR = "#000000";
 
-const INSTAGRAM_QR_PATH = "/insta_qr.png";
-const WEBSITE_QR_PATH = "/webaac_qr.png";
+const INSTAGRAM_QR_PATH = "/insta_qr.jpeg";
+const WEBSITE_QR_PATH = "/hotel_qr.jpeg";
 
 Font.register({
   family: "Poppins",
@@ -297,9 +297,9 @@ export const HotelInvoiceDocument = ({
   guestDiscount,
   gstNumber,
   formatIST,
-  logoPath = "/WebaacLogo.png",
-  instagramQrPath = "/insta_qr.png",
-  websiteQrPath = "/webaac_qr.png",
+  logoPath = "/FridayInnLogo.png",
+  instagramQrPath = "/insta_qr.jpeg",
+  websiteQrPath = "/hotel_qr.jpeg",
 }) => {
   const monthNames = [
     "Jan",
@@ -459,10 +459,14 @@ export const HotelInvoiceDocument = ({
 
             <View style={styles.headerTextContainer}>
               <Text style={styles.hotelName}>Hotel Friday Inn</Text>
-              <Text style={styles.address}>D.NO 307 ASAMBUR TO MANJAKUTTAI ROAD,{"\n"}
+              <Text style={styles.address}>
+                D.NO 307 ASAMBUR TO MANJAKUTTAI ROAD,{"\n"}
                 ASAMBUR VILLAGE, YERCAUD - 636602,{"\n"}
-                TAMIL NADU, INDIA.</Text>
-              <Text style={styles.contact}>Call: +91 6369469094 | +91 9489690022 | 04281-290001.</Text>
+                TAMIL NADU, INDIA.
+              </Text>
+              <Text style={styles.contact}>
+                Call: +91 6369469094 | +91 9489690022 | 04281-290001.
+              </Text>
               {/* <Text style={styles.contact}>Email:hello@webaac.in</Text> */}
               {/* <Text style={styles.gstBanner}>
                 GST NO:{" "}

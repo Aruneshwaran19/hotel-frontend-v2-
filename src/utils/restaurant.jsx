@@ -172,7 +172,7 @@ const RestaurantBillDocument = ({
     <Page size={[THERMAL_WIDTH, pageHeight]} style={styles.page}>
       <View style={styles.ticket}>
         <View style={styles.headerRow}>
-          <Image style={styles.logo} src="/WebaacLogo.png" />
+          <Image style={styles.logo} src="/FridayInnLogo.png" />
           <View style={styles.hotelMeta}>
             <Text style={styles.title}>
               {restaurantName || "Hotel Friday Inn"}

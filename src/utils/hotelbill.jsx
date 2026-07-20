@@ -158,9 +158,9 @@ const formatNow = (formatIST) => {
 // Resolve logo to an absolute URL so @react-pdf/renderer can fetch it
 const getLogoSrc = () => {
   if (typeof window !== "undefined") {
-    return `${window.location.origin}/WebaacLogo.png`;
+    return `${window.location.origin}/FridayInnLogo.png`;
   }
-  return "/WebaacLogo.png";
+  return "/FridayInnLogo.png";
 };
 
 const THERMAL_WIDTH = 226;
