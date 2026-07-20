@@ -64,9 +64,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         <div className="shrink-0 px-5 py-4 md:py-6 border-b border-white/10 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold tracking-tight leading-tight">
-              <span className="text-white">Webaac Hotel </span>
+              <span className="text-white">Hotel Friday </span>
               <span className="ml-1 bg-linear-to-r from-[#E8C878] to-yellow-400 bg-clip-text text-transparent">
-                CRM
+                Inn
               </span>
             </h1>
             <p className="text-[10px] text-gray-400 mt-1 font-medium">
@@ -132,7 +132,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         <div className="shrink-0 px-6 py-3 md:py-4 border-t border-white/10">
           <div className="flex items-center justify-center">
             <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">
-              © Webaac Hotel CRM 2026
+              © Hotel Friday Inn 2026
             </p>
           </div>
         </div>

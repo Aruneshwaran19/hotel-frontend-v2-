@@ -10,7 +10,6 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 
-// ── Font registration (wrapped to avoid crashes if CDN is unreachable) ──────
 try {
   Font.register({
     family: "Poppins",
@@ -187,7 +186,7 @@ const KitchenBillDocument = ({
         <View style={styles.headerRow}>
           {logoSrc ? <Image style={styles.logo} src={logoSrc} /> : null}
           <View style={styles.hotelMeta}>
-            <Text style={styles.title}>Webaac Hotel CRM</Text>
+            <Text style={styles.title}>Hotel Friday Inn</Text>
             <Text style={styles.address}>
               D.NO 307 ASAMBUR TO MANJAKUTTAI ROAD,{"\n"}
               ASAMBUR VILLAGE, YERCAUD - 636602,{"\n"}
@@ -255,7 +254,7 @@ const KitchenBillDocument = ({
         </View>
 
         <Text style={styles.footer}>
-          Thank you for dining at Webaac Hotel CRM.
+          Thank you for dining at Hotel Friday Inn.
         </Text>
         <Text style={styles.footer}>Please visit again.</Text>
       </View>

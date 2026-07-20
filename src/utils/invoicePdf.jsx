@@ -28,7 +28,7 @@ const FallbackInvoiceDocument = ({ selectedBill }) => {
         size="A4"
         style={{ padding: 24, fontFamily: "Helvetica", fontSize: 10 }}
       >
-        <Text style={{ fontSize: 16, marginBottom: 10 }}>Webaac Hotel CRM</Text>
+        <Text style={{ fontSize: 16, marginBottom: 10 }}>Hotel Friday Inn</Text>
         <Text style={{ marginBottom: 6 }}>Invoice #{billId}</Text>
         <Text style={{ marginBottom: 6 }}>
           Guest: {selectedBill?.customer_name || "Guest"}
@@ -97,7 +97,10 @@ export const generateInvoicePDF = async (props) => {
       }, 2000);
       return;
     } catch (error) {
-      console.error("Server invoice PDF failed, falling back to client render:", error);
+      console.error(
+        "Server invoice PDF failed, falling back to client render:",
+        error,
+      );
     }
   }
 

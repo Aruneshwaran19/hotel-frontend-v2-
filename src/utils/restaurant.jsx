@@ -175,7 +175,7 @@ const RestaurantBillDocument = ({
           <Image style={styles.logo} src="/WebaacLogo.png" />
           <View style={styles.hotelMeta}>
             <Text style={styles.title}>
-              {restaurantName || "Webaac Hotel CRM"}
+              {restaurantName || "Hotel Friday Inn"}
             </Text>
             <Text style={styles.address}>
               D.NO 307 ASAMBUR TO MANJAKUTTAI ROAD,{"\n"}
@@ -183,7 +183,7 @@ const RestaurantBillDocument = ({
               TAMIL NADU, INDIA.
             </Text>
             <Text style={styles.contact}>
-             Call: +91 6369469094 | +91 9489690022 | 04281-290001.
+              Call: +91 6369469094 | +91 9489690022 | 04281-290001.
             </Text>
           </View>
         </View>
@@ -209,7 +209,7 @@ const RestaurantBillDocument = ({
         <View style={styles.tableHeader}>
           <Text style={[styles.colItem, styles.bold]}>Item</Text>
           <Text style={[styles.colQty, styles.bold]}>Qty</Text>
-   
+
           <Text style={[styles.colAmount, styles.bold]}>Amount</Text>
         </View>
 
@@ -217,7 +217,7 @@ const RestaurantBillDocument = ({
           <View style={styles.itemRow} key={`restaurant-item-${index}`}>
             <Text style={styles.colItem}>{item.item_name}</Text>
             <Text style={styles.colQty}>{item.quantity}</Text>
-      
+
             <Text style={[styles.colAmount, styles.bold]}>
               {currency(item.total)}
             </Text>
@@ -241,7 +241,9 @@ const RestaurantBillDocument = ({
           <Text style={styles.totalValue}>{currency(totalAmount)}</Text>
         </View>
 
-        <Text style={styles.footer}>Thank you for dining at Webaac Hotel CRM.</Text>
+        <Text style={styles.footer}>
+          Thank you for dining at Hotel Friday Inn.
+        </Text>
         <Text style={styles.footer}>Please visit again.</Text>
       </View>
     </Page>
@@ -263,7 +265,7 @@ const triggerBlobDownload = (blob, filename) => {
 };
 
 export const generateRestaurantBillPDF = async ({
-  restaurantName = "Webaac Hotel CRM",
+  restaurantName = "Hotel Friday Inn",
   tableNo = "-",
   billNo = "-",
   orders = [],

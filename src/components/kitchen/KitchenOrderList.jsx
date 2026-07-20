@@ -3,7 +3,7 @@ import axios from "axios";
 import { API_BASE_URL } from "../../config";
 import { generateKitchenBillPDF } from "../../utils/hotelbill";
 import { generateRestaurantBillPDF } from "../../utils/restaurant.jsx";
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
 
 // Subcomponents
 import OrderModeToggle from "./subcomponents/OrderModeToggle";
@@ -113,7 +113,9 @@ export default function RestaurantOrderList({ user }) {
   // Create new order
   const createOrder = async () => {
     if (!selectedIdentifier) {
-      toast.warning(orderMode === "restaurant" ? "Select Table" : "Select Room");
+      toast.warning(
+        orderMode === "restaurant" ? "Select Table" : "Select Room",
+      );
       return;
     }
     if (!selectedItem) {
@@ -172,8 +174,7 @@ export default function RestaurantOrderList({ user }) {
           : { booking_id: identifier };
 
       // âœ… Only prepare bill data
-      setShowBillModal(true)
-
+      setShowBillModal(true);
 
       // âœ… THEN prepare bill data
       const subtotal = group.orders.reduce((sum, o) => {
@@ -187,16 +188,15 @@ export default function RestaurantOrderList({ user }) {
 
       setSelectedBill({
         identifier,
-        customer_name:
-          group.orders[0]?.customer_name || `Table ${identifier}`,
+        customer_name: group.orders[0]?.customer_name || `Table ${identifier}`,
         items: group.orders.map((o) => {
           const qty = Number(o.quantity || 0);
           const price = Number(o.price || 0);
           return {
-          item_name: o.item_name,
-          quantity: qty,
-          price,
-          total: qty * price,
+            item_name: o.item_name,
+            quantity: qty,
+            price,
+            total: qty * price,
           };
         }),
         subtotal,
@@ -212,7 +212,6 @@ export default function RestaurantOrderList({ user }) {
       setGeneratingBill(false);
     }
   };
-
 
   const formatIST = (date) => {
     return new Date(date).toLocaleString("en-IN", {
@@ -231,7 +230,7 @@ export default function RestaurantOrderList({ user }) {
 
     if (orderMode === "restaurant") {
       generateRestaurantBillPDF({
-        restaurantName: "Webaac Hotel CRM",
+        restaurantName: "Hotel Friday Inn",
         tableNo: selectedBill.identifier,
         billNo: selectedBill.identifier,
         orders: selectedBill.items,
@@ -268,23 +267,18 @@ export default function RestaurantOrderList({ user }) {
     }
   };
 
-
-
-
   // Filter orders
-  const liveOrders = orders.filter(
-    (o) => o.status?.toLowerCase() !== "served"
-  );
+  const liveOrders = orders.filter((o) => o.status?.toLowerCase() !== "served");
 
   const servedOrders = orders.filter(
-    (o) => o.status?.toLowerCase() === "served"
+    (o) => o.status?.toLowerCase() === "served",
   );
-
 
   // Group served orders
   const servedOrdersGrouped = Object.values(
     servedOrders.reduce((acc, order) => {
-      const key = orderMode === "restaurant" ? order.table_number : order.booking_id;
+      const key =
+        orderMode === "restaurant" ? order.table_number : order.booking_id;
       if (!acc[key]) {
         acc[key] = { identifier: key, orders: [] };
       }
@@ -304,10 +298,7 @@ export default function RestaurantOrderList({ user }) {
 
   return (
     <div className="space-y-6">
-      <OrderModeToggle
-        orderMode={orderMode}
-        onModeSwitch={handleModeSwitch}
-      />
+      <OrderModeToggle orderMode={orderMode} onModeSwitch={handleModeSwitch} />
 
       <CreateOrderForm
         orderMode={orderMode}
@@ -365,4 +356,3 @@ export default function RestaurantOrderList({ user }) {
     </div>
   );
 }
-

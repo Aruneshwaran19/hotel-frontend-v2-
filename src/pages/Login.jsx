@@ -16,7 +16,8 @@ export default function Login() {
     const e = {};
     const normalizedEmail = email.trim();
     if (!normalizedEmail) e.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(normalizedEmail)) e.email = "Invalid email format";
+    else if (!/\S+@\S+\.\S+/.test(normalizedEmail))
+      e.email = "Invalid email format";
     if (!password) e.password = "Password is required";
     else if (password.length < 6) e.password = "Minimum 6 characters";
     setErrors(e);
@@ -63,55 +64,96 @@ export default function Login() {
         <div className="relative z-10">
           <div className="animate-slide-left">
             <h1 className="text-5xl font-bold mb-2">
-            Webaac Hotel <span className="text-[#FFCC00] ml-1">CRM</span>
+              Hotel Friday <span className="text-[#FFCC00] ml-1">Inn</span>
             </h1>
             <p className="text-sm text-gray-400 font-light">
               Hotel Management System
             </p>
           </div>
 
-          <div className="mt-20 space-y-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+          <div
+            className="mt-20 space-y-6 animate-fade-in"
+            style={{ animationDelay: "0.2s" }}
+          >
             {[
-              { 
+              {
                 icon: (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
                   </svg>
                 ),
-                title: "Real-time Dashboard", 
+                title: "Real-time Dashboard",
                 desc: "Live analytics & reporting",
-                color: "#2563EB"
+                color: "#2563EB",
               },
-              { 
+              {
                 icon: (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                    />
                   </svg>
                 ),
-                title: "Booking Management", 
+                title: "Booking Management",
                 desc: "Seamless reservation handling",
-                color: "#C53FFF"
+                color: "#C53FFF",
               },
-              { 
+              {
                 icon: (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
                   </svg>
                 ),
-                title: "Enterprise Security", 
+                title: "Enterprise Security",
                 desc: "Role-based access control",
-                color: "#10B981"
-              }
+                color: "#10B981",
+              },
             ].map((item, i) => (
-              <div key={i} className="flex gap-4 group cursor-pointer transition-transform hover:translate-x-1">
-                <div 
+              <div
+                key={i}
+                className="flex gap-4 group cursor-pointer transition-transform hover:translate-x-1"
+              >
+                <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity"
-                  style={{ backgroundColor: item.color + "20", color: item.color }}
+                  style={{
+                    backgroundColor: item.color + "20",
+                    color: item.color,
+                  }}
                 >
                   {item.icon}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white group-hover:text-[#FFCC00] transition-colors">{item.title}</p>
+                  <p className="text-sm font-semibold text-white group-hover:text-[#FFCC00] transition-colors">
+                    {item.title}
+                  </p>
                   <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
                 </div>
               </div>
@@ -120,21 +162,22 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 text-xs text-gray-500">
-          <p className="font-light">© 2026 Webaac Hotel CRM. All rights reserved.</p>
+          <p className="font-light">
+            © 2026 Hotel Friday Inn. All rights reserved.
+          </p>
         </div>
       </div>
 
       {/* RIGHT LOGIN PANEL - Clean Professional */}
       <div className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md animate-slide-right">
-
           {/* HEADER */}
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
               Welcome back
             </h2>
             <p className="text-sm text-gray-600 mt-2 font-light">
-              Sign in to your Webaac Hotel CRM account
+              Sign in to your Hotel Friday Inn account
             </p>
           </div>
 
@@ -144,7 +187,6 @@ export default function Login() {
             noValidate
             className="bg-white rounded-3xl shadow-sm border border-gray-200/60 p-8 space-y-4"
           >
-
             {/* EMAIL INPUT */}
             <div className="">
               <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -163,8 +205,16 @@ export default function Login() {
               />
               {errors.email && (
                 <p className="text-xs text-red-600 font-semibold flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  <svg
+                    className="w-3 h-3"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   {errors.email}
                 </p>
@@ -198,8 +248,16 @@ export default function Login() {
               </div>
               {errors.password && (
                 <p className="text-xs text-red-600 font-semibold flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  <svg
+                    className="w-3 h-3"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   {errors.password}
                 </p>
@@ -209,8 +267,16 @@ export default function Login() {
             {/* ERROR MESSAGE */}
             {error && (
               <div className="flex gap-3 p-4 bg-red-50/80 border border-red-300/50 rounded-lg">
-                <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5 text-red-600 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <p className="text-sm text-red-700 font-medium">{error}</p>
               </div>
@@ -231,7 +297,6 @@ export default function Login() {
                 "Sign In"
               )}
             </button>
-
           </form>
 
           {/* FOOTER */}

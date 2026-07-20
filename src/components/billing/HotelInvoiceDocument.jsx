@@ -458,10 +458,12 @@ export const HotelInvoiceDocument = ({
             <Image style={styles.logo} src={logoPath} />
 
             <View style={styles.headerTextContainer}>
-              <Text style={styles.hotelName}>Webaac Hotel CRM</Text>
-              <Text style={styles.address}>Vellore, Tamil Nadu, India</Text>
-              <Text style={styles.contact}>Call: +91 9025348397</Text>
-              <Text style={styles.contact}>Email:hello@webaac.in</Text>
+              <Text style={styles.hotelName}>Hotel Friday Inn</Text>
+              <Text style={styles.address}>D.NO 307 ASAMBUR TO MANJAKUTTAI ROAD,{"\n"}
+                ASAMBUR VILLAGE, YERCAUD - 636602,{"\n"}
+                TAMIL NADU, INDIA.</Text>
+              <Text style={styles.contact}>Call: +91 6369469094 | +91 9489690022 | 04281-290001.</Text>
+              {/* <Text style={styles.contact}>Email:hello@webaac.in</Text> */}
               {/* <Text style={styles.gstBanner}>
                 GST NO:{" "}
                 {selectedBill?.category === "A frame wooden villa AC"

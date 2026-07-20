@@ -79,7 +79,7 @@ export default function Topbar({ onMenuClick }) {
             </h2>
             <div className="w-0.5 h-4 md:w-1 md:h-6 bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500 rounded-full"></div>
             <h2 className="text-sm md:text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent truncate max-w-[120px] md:max-w-none">
-            Webaac Hotel CRM
+              Hotel Friday Inn
             </h2>
           </div>
         </div>
@@ -105,8 +105,9 @@ export default function Topbar({ onMenuClick }) {
 
           <ChevronDown
             size={18}
-            className={`text-gray-600 transition-all duration-300 group-hover:text-gray-900 ${open ? "rotate-180" : ""
-              }`}
+            className={`text-gray-600 transition-all duration-300 group-hover:text-gray-900 ${
+              open ? "rotate-180" : ""
+            }`}
           />
         </button>
 
