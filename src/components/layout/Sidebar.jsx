@@ -131,8 +131,11 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
         <div className="shrink-0 px-6 py-3 md:py-4 border-t border-white/10">
           <div className="flex items-center justify-center">
-            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">
-              © Hotel Friday Inn 2026
+            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest text-center leading-relaxed">
+              © 2026 Hotel Friday Inn
+              <br />
+              Powered by{" "}
+              <span className="text-yellow-400">Webaac Solutions</span> · v1.0.0
             </p>
           </div>
         </div>
