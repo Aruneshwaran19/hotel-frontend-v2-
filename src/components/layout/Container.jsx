@@ -21,10 +21,9 @@ export default function Container({ children }) {
       </div>
 
       <footer className="px-4 md:px-8 py-4 text-center">
-        <p className="text-sm text-gray-600 font-medium">
+        <p className="text-xs text-gray-500 font-light">
           © 2026 Hotel Friday Inn | Powered by{" "}
-          <span className="text-yellow-600 font-bold">Webaac Solutions</span> |
-          v1.0.0
+          <span className="text-yellow-500 font-medium">Webaac Solutions</span> | v1.0.0
         </p>
       </footer>
     </div>
