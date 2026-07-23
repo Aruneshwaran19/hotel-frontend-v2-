@@ -468,8 +468,12 @@ export const HotelInvoiceDocument = ({
                 Call: +91 6369469094 | +91 9489690022 | 04281-290001.
               </Text>
               {/* <Text style={styles.contact}>Email:hello@webaac.in</Text> */}
-              <Text style={styles.gstBanner}>GST NO: 33AMQPK7880E2ZO</Text>
-              {/* GST NO: 33AMQPK7880E1ZP — commented out, not in use */}
+              <Text style={styles.gstBanner}>
+                GST NO:{" "}
+                {selectedBill?.category === "A frame wooden villa AC"
+                  ? "33AMQPK7880E2ZO"
+                  : "33AMQPK7880E1ZP"}
+              </Text>
             </View>
           </View>
           <View style={styles.headerRight}>
