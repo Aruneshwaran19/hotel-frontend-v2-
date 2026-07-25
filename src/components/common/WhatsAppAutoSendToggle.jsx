@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import auth from "../../auth/axiosInstance";
 import { toast } from "react-toastify";
+import { MessageCircle } from "lucide-react";
 
-// Small pill switch
 function Switch({ checked, onChange, disabled }) {
   return (
     <button
@@ -11,24 +11,22 @@ function Switch({ checked, onChange, disabled }) {
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0A1B4D]/40 ${
         checked ? "bg-emerald-500" : "bg-gray-300"
       } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
     >
       <span
-        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-          checked ? "translate-x-4.5" : "translate-x-1"
-        }`}
-        style={{ transform: checked ? "translateX(18px)" : "translateX(2px)" }}
+        className="inline-block h-4.5 w-4.5 transform rounded-full bg-white shadow-sm transition-transform duration-200"
+        style={{
+          height: "18px",
+          width: "18px",
+          transform: checked ? "translateX(22px)" : "translateX(3px)",
+        }}
       />
     </button>
   );
 }
 
-/**
- * Shows a toggle for one WhatsApp auto-send flag ("booking" or "billing").
- * Defaults to ON; manual send buttons elsewhere are unaffected by this setting.
- */
 export default function WhatsAppAutoSendToggle({ type }) {
   const [settings, setSettings] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -36,9 +34,11 @@ export default function WhatsAppAutoSendToggle({ type }) {
   const key =
     type === "booking" ? "auto_booking_confirmation" : "auto_bill_payment";
   const label =
+    type === "booking" ? "Auto WhatsApp on booking" : "Auto WhatsApp invoice";
+  const hint =
     type === "booking"
-      ? "Auto-send WhatsApp on booking confirmation"
-      : "Auto-send WhatsApp invoice when bill is paid";
+      ? "Sends when a booking is confirmed or checked in"
+      : "Sends when a bill is marked as paid";
 
   useEffect(() => {
     auth
@@ -56,6 +56,9 @@ export default function WhatsAppAutoSendToggle({ type }) {
     try {
       const res = await auth.put("/whatsapp-settings", next);
       setSettings(res.data);
+      toast.success(
+        nextValue ? "Auto WhatsApp turned on" : "Auto WhatsApp turned off",
+      );
     } catch (err) {
       setSettings(prev);
       toast.error("Failed to update WhatsApp setting");
@@ -66,10 +69,26 @@ export default function WhatsAppAutoSendToggle({ type }) {
 
   if (!settings) return null;
 
+  const checked = settings[key];
+
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600">
-      <Switch checked={settings[key]} onChange={handleToggle} disabled={saving} />
-      <span>{label}</span>
+    <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm">
+      <div
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${
+          checked ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"
+        }`}
+      >
+        <MessageCircle size={16} strokeWidth={2.25} />
+      </div>
+
+      <div className="flex flex-col leading-tight">
+        <span className="text-sm font-medium text-gray-900">{label}</span>
+        <span className="text-xs text-gray-500">{hint}</span>
+      </div>
+
+      <div className="ml-2">
+        <Switch checked={checked} onChange={handleToggle} disabled={saving} />
+      </div>
     </div>
   );
 }
