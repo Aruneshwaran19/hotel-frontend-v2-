@@ -135,7 +135,15 @@ export default function Sidebar({ isOpen, setIsOpen }) {
               © 2026 Hotel Friday Inn
               <br />
               Powered by{" "}
-              <span className="text-yellow-400">Webaac Solutions</span> · v1.0.0
+              <a
+                href="https://webaac.in/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-yellow-400 hover:underline"
+              >
+                Webaac Solutions
+              </a>{" "}
+              · v1.0.0
             </p>
           </div>
         </div>

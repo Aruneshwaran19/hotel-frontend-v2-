@@ -164,9 +164,14 @@ export default function Login() {
         <div className="relative z-10 text-xs text-gray-500">
           <p className="font-light">
             © 2026 Hotel Friday Inn | Powered by{" "}
-            <span className="text-yellow-400 font-medium">
+            <a
+              href="https://webaac.in/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-yellow-400 font-medium hover:underline"
+            >
               Webaac Solutions
-            </span>{" "}
+            </a>{" "}
             | v1.0.0
           </p>
         </div>

@@ -25,13 +25,20 @@ export default function SubscriptionWarning() {
   const [topbarHeight, setTopbarHeight] = useState(0);
 
   useEffect(() => {
-    const measure = () => {
-      const topbar = document.querySelector('[class*="fixed top-0"]');
-      if (topbar) setTopbarHeight(topbar.getBoundingClientRect().height);
-    };
+    const topbar = document.querySelector('[class*="fixed top-0"]');
+    if (!topbar) return;
+
+    const measure = () => setTopbarHeight(topbar.getBoundingClientRect().height);
     measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(topbar);
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, []);
 
   useEffect(() => {
