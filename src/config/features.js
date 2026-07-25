@@ -1,1 +1,3 @@
-export const WHATSAPP_ENABLED = false;
+const WHATSAPP_ENABLED = true;
+
+module.exports = { WHATSAPP_ENABLED };
