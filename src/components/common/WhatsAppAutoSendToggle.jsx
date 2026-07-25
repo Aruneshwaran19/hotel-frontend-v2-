@@ -31,17 +31,15 @@ function Switch({ checked, onChange, disabled }) {
 const COPY = {
   booking: {
     label: "Auto Confirmation",
-    tooltip:
-      "When on, guests get a WhatsApp message automatically once a booking is confirmed or checked in.",
-    onMsg: "Guests will now get a WhatsApp confirmation automatically",
-    offMsg: "Auto-send is off — confirmations must be sent manually",
+    tooltip: "Customer gets booking confirmation on WhatsApp",
+    onMsg: "Auto-send is confirmation on",
+    offMsg: "Auto-send is confirmation off",
   },
   billing: {
     label: "Auto Invoice",
-    tooltip:
-      "When on, guests get their invoice on WhatsApp automatically as soon as a bill is marked paid.",
-    onMsg: "Guests will now get their invoice on WhatsApp automatically",
-    offMsg: "Auto-send is off — invoices must be sent manually",
+    tooltip: "Customer gets their invoice on WhatsApp",
+    onMsg: "Auto-send is invoices on",
+    offMsg: "Auto-send is invoices off",
   },
 };
 
