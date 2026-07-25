@@ -10,6 +10,7 @@ import { toast } from 'react-toastify';
 import { X } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import WhatsAppAutoSendToggle from "../components/common/WhatsAppAutoSendToggle";
+import { WHATSAPP_ENABLED } from "../config/features";
 
 export default function Booking() {
   const { user } = useAuth();
@@ -164,8 +165,8 @@ export default function Booking() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Bookings</h1>
 
-        {isAdmin && (
-          <div className="md:mr-auto md:ml-4">
+        {isAdmin && WHATSAPP_ENABLED && (
+          <div className="md:mr-auto">
             <WhatsAppAutoSendToggle type="booking" />
           </div>
         )}

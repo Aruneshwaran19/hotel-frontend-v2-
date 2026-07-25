@@ -11,6 +11,7 @@ import { LoadingSpinner } from "../common/LoadingSpinner";
 import { Download, MoreVertical, Eye, Trash2, CheckCircle2 } from "lucide-react";
 import CustomerAvatar from "../common/CustomerAvatar";
 import WhatsAppAutoSendToggle from "../common/WhatsAppAutoSendToggle";
+import { WHATSAPP_ENABLED } from "../../config/features";
 
 const PAGE_SIZE = 8;
 
@@ -96,7 +97,7 @@ function BillCard({ bill, onOpen, onDeleteComplete, onTogglePaid, onSendWhatsapp
           </button>
         )}
 
-        {isPaid && (
+        {isPaid && WHATSAPP_ENABLED && (
           <button
             disabled={sendingWhatsapp}
             onClick={async () => {
@@ -284,7 +285,7 @@ function BillRow({ bill, onOpen, onDeleteComplete, onTogglePaid, onSendWhatsapp 
                   </button>
                 )}
 
-                {isPaid && (
+                {isPaid && WHATSAPP_ENABLED && (
                   <button
                     disabled={sendingWhatsapp}
                     onClick={async () => {
@@ -584,11 +585,7 @@ const BillingList = () => {
           Billing
         </h1>
 
-        {isAdmin && (
-          <div className="sm:ml-auto">
-            <WhatsAppAutoSendToggle type="billing" />
-          </div>
-        )}
+        {isAdmin && WHATSAPP_ENABLED && <WhatsAppAutoSendToggle type="billing" />}
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
           {isAdmin && (
