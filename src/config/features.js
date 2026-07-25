@@ -1,1 +1,1 @@
-export const WHATSAPP_ENABLED = false;
+export const WHATSAPP_ENABLED = true;
