@@ -24,7 +24,6 @@ const Expenses = () => {
   /* ================= LOAD EXPENSES ================= */
   useEffect(() => {
     getExpenses(activeFilter);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFilter]);
 
   /* ================= FILTER + SEARCH ================= */

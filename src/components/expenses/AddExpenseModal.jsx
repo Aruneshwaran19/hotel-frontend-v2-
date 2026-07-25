@@ -48,7 +48,6 @@ const AddExpenseModal = ({ open, onClose, onAdd, loading, error }) => {
 
       onClose();
     } catch {
-      // error handled in hook
     }
   };
 

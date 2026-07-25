@@ -350,7 +350,6 @@ export const generateKitchenBillPDF = async ({
     if (typeof pdfInstance.toBlob === "function") {
       blob = await pdfInstance.toBlob();
     } else {
-      // v3 API
       pdfInstance.updateContainer(doc);
       blob = await pdfInstance.toBlob();
     }

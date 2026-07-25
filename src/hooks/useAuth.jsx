@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [hasBanner, setHasBanner] = useState(false);
 
-  // 🔄 Restore session on refresh
+  // Restore session on refresh
   useEffect(() => {
     const restoreSession = async () => {
       try {

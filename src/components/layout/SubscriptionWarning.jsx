@@ -24,7 +24,6 @@ export default function SubscriptionWarning() {
   const [showBanner, setShowBanner] = useState(false);
   const [topbarHeight, setTopbarHeight] = useState(0);
 
-  // Measure the actual topbar height so the banner sits exactly below it
   useEffect(() => {
     const measure = () => {
       const topbar = document.querySelector('[class*="fixed top-0"]');

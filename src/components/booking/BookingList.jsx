@@ -196,6 +196,18 @@ export default function BookingList({
     }
   };
 
+  const handleSendWhatsapp = async (booking) => {
+    try {
+      const res = await auth.post(`/bookings/${booking.id}/send-whatsapp`);
+      toast.success(res.data?.message || "Booking confirmation sent via WhatsApp");
+    } catch (err) {
+      const data = err.response?.data;
+      toast.error(
+        data?.error || data?.message || "Failed to send booking confirmation via WhatsApp",
+      );
+    }
+  };
+
   const openCheckoutById = async (id) => {
     try {
       const res = await auth.get(`/bookings/${id}`);
@@ -444,6 +456,7 @@ export default function BookingList({
         onDelete={onDelete}
         onStatusChange={handleStatusChange}
         onEdit={onEdit}
+        onSendWhatsapp={handleSendWhatsapp}
       />
 
       {(checkoutBooking || checkoutResult) && (

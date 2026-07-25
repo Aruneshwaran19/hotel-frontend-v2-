@@ -6,7 +6,7 @@ import CustomerAvatar from "../common/CustomerAvatar";
 const ITEMS_PER_PAGE = 6;
 
 /* ================= FIXED-POSITION ACTIONS MENU ================= */
-const ActionsMenu = ({ booking, onDelete, onEdit }) => {
+const ActionsMenu = ({ booking, onDelete, onEdit, onSendWhatsapp }) => {
   const [open, setOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
@@ -73,6 +73,18 @@ const ActionsMenu = ({ booking, onDelete, onEdit }) => {
                   </svg>
                 </span>
                 <span className="font-medium">Edit Booking</span>
+              </button>
+
+              <button
+                onClick={() => { setOpen(false); onSendWhatsapp(booking); }}
+                className="group flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors border-t border-gray-50"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-green-100 text-green-500 group-hover:bg-green-200 transition-colors shrink-0">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.2-3.6A7.9 7.9 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </span>
+                <span className="font-medium">Send WhatsApp Confirmation</span>
               </button>
 
               <button
@@ -175,6 +187,7 @@ export default function BookingTable({
   onDelete,
   onStatusChange,
   onEdit,
+  onSendWhatsapp,
 }) {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
@@ -364,6 +377,7 @@ export default function BookingTable({
                           booking={booking}
                           onDelete={onDelete}
                           onEdit={onEdit}
+                          onSendWhatsapp={onSendWhatsapp}
                         />
 
                         </td>

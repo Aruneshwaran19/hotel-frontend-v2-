@@ -279,6 +279,11 @@ const BillingList = () => {
       toast.success(
         nextStatus === "paid" ? "Bill marked as paid" : "Bill marked as not paid",
       );
+
+      // Automatically send the invoice on WhatsApp once the bill is paid
+      if (nextStatus === "paid") {
+        handleSendWhatsapp(bill);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to update payment status");

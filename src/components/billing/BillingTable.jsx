@@ -19,10 +19,9 @@ const ActionsMenu = ({ bill, onOpen, onDelete, downloaded }) => {
 
   const openMenu = () => {
     const rect = btnRef.current.getBoundingClientRect();
-    const menuWidth = 208; // w-52
+    const menuWidth = 208;
     let left = rect.right - menuWidth;
     let top = rect.bottom + 6;
-    // If near bottom of viewport, flip upward
     if (top + 140 > window.innerHeight) {
       top = rect.top - 140 - 6;
     }

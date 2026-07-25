@@ -83,6 +83,7 @@ const getDefaultDateTimes = (clickedDate) => {
 
   return { check_in: checkIn, check_out: checkOut };
 };
+
 // STRING-BASED CONFLICT DETECTION
 
 const normaliseDateStr = (value) => {
@@ -517,7 +518,6 @@ export default function BookingForm({
           try {
             checkoutInput.showPicker();
           } catch {
-            // showPicker may require a direct user gesture in some browsers
           }
         }
       }, 0);

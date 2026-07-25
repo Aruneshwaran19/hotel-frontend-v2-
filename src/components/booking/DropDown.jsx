@@ -10,7 +10,6 @@ export default function StatusDropdown({ value, onChange, className = "" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  // Close when clicking outside
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
