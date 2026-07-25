@@ -28,16 +28,30 @@ function Switch({ checked, onChange, disabled }) {
   );
 }
 
+const COPY = {
+  booking: {
+    label: "Auto Confirmation",
+    tooltip:
+      "When on, guests get a WhatsApp message automatically once a booking is confirmed or checked in.",
+    onMsg: "Guests will now get a WhatsApp confirmation automatically",
+    offMsg: "Auto-send is off — confirmations must be sent manually",
+  },
+  billing: {
+    label: "Auto Invoice",
+    tooltip:
+      "When on, guests get their invoice on WhatsApp automatically as soon as a bill is marked paid.",
+    onMsg: "Guests will now get their invoice on WhatsApp automatically",
+    offMsg: "Auto-send is off — invoices must be sent manually",
+  },
+};
+
 export default function WhatsAppAutoSendToggle({ type }) {
   const [settings, setSettings] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const key =
     type === "booking" ? "auto_booking_confirmation" : "auto_bill_payment";
-  const title =
-    type === "booking"
-      ? "Auto-send WhatsApp booking confirmation"
-      : "Auto-send WhatsApp invoice on payment";
+  const copy = COPY[type];
 
   useEffect(() => {
     auth
@@ -55,9 +69,7 @@ export default function WhatsAppAutoSendToggle({ type }) {
     try {
       const res = await auth.put("/whatsapp-settings", next);
       setSettings(res.data);
-      toast.success(
-        nextValue ? "Auto WhatsApp turned on" : "Auto WhatsApp turned off",
-      );
+      toast.success(nextValue ? copy.onMsg : copy.offMsg);
     } catch (err) {
       setSettings(prev);
       toast.error("Failed to update WhatsApp setting");
@@ -72,7 +84,7 @@ export default function WhatsAppAutoSendToggle({ type }) {
 
   return (
     <div
-      title={title}
+      title={copy.tooltip}
       className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1"
     >
       <MessageCircle
@@ -80,7 +92,9 @@ export default function WhatsAppAutoSendToggle({ type }) {
         strokeWidth={2.25}
         className={checked ? "text-emerald-500" : "text-gray-400"}
       />
-      <span className="text-[11px] font-medium text-gray-500">Auto</span>
+      <span className="text-[11px] font-medium text-gray-500">
+        {copy.label}
+      </span>
       <Switch checked={checked} onChange={handleToggle} disabled={saving} />
     </div>
   );
