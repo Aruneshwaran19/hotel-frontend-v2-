@@ -10,6 +10,7 @@ import SearchInput from "../common/SearchInput";
 import { LoadingSpinner } from "../common/LoadingSpinner";
 import { Download, MoreVertical, Eye, Trash2, CheckCircle2 } from "lucide-react";
 import CustomerAvatar from "../common/CustomerAvatar";
+import WhatsAppAutoSendToggle from "../common/WhatsAppAutoSendToggle";
 
 const PAGE_SIZE = 8;
 
@@ -23,6 +24,138 @@ function BilledByCell({ billedBy }) {
         {initial}
       </span>
       <span className="text-sm text-gray-700 whitespace-nowrap">{name}</span>
+    </div>
+  );
+}
+
+// ─── MOBILE CARD (small screens) ────
+function BillCard({ bill, onOpen, onDeleteComplete, onTogglePaid, onSendWhatsapp }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [sendingWhatsapp, setSendingWhatsapp] = useState(false);
+  const isPaid = bill.payment_status === "paid";
+
+  const formattedDate = bill.created_at
+    ? new Date(bill.created_at).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
+
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 space-y-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <CustomerAvatar photo={bill.customer_photo} name={bill.customer_name} size="md" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">
+              {bill.customer_name || "—"}
+            </p>
+            <p className="text-[11px] text-gray-400">#{bill.id}</p>
+          </div>
+        </div>
+        <span
+          className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full ${
+            isPaid ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
+          }`}
+        >
+          {isPaid ? "Paid" : "Not Paid"}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+        <span className="inline-block rounded bg-gray-100 px-2 py-0.5 font-mono text-gray-600">
+          {bill.booking_id}
+        </span>
+        <span>Room {bill.room_number || "—"}</span>
+        <span>{formattedDate}</span>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Total</p>
+          <p className="text-sm font-bold text-gray-900">
+            ₹{Number(bill.total_amount || 0).toLocaleString("en-IN")}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Advance</p>
+          <p className="text-sm font-medium text-gray-800">
+            ₹{Number(bill.advance_paid || 0).toLocaleString("en-IN")}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 pt-1">
+        {isPaid && (
+          <button
+            onClick={() => onOpen(bill)}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50"
+          >
+            <Eye size={13} /> Generate Bill
+          </button>
+        )}
+
+        {isPaid && (
+          <button
+            disabled={sendingWhatsapp}
+            onClick={async () => {
+              setSendingWhatsapp(true);
+              await onSendWhatsapp(bill);
+              setSendingWhatsapp(false);
+            }}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
+          >
+            {sendingWhatsapp ? "Sending..." : "Send to WhatsApp"}
+          </button>
+        )}
+
+        {!isPaid && (
+          <button
+            onClick={() => onTogglePaid(bill)}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-green-600 hover:bg-green-50"
+          >
+            <CheckCircle2 size={13} /> Mark as Paid
+          </button>
+        )}
+
+        {!confirmDelete ? (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
+          >
+            <Trash2 size={13} /> Delete
+          </button>
+        ) : (
+          <div className="flex w-full items-center gap-2 rounded-lg bg-red-50 px-3 py-2">
+            <span className="text-xs text-red-600 font-medium flex-1">Delete this bill?</span>
+            <button
+              onClick={() => {
+                axios
+                  .delete(`${API_BASE_URL}/api/billings/${bill.id}`, { withCredentials: true })
+                  .then(() => {
+                    toast.success("Bill deleted successfully");
+                    setConfirmDelete(false);
+                    if (onDeleteComplete) onDeleteComplete(bill.id);
+                  })
+                  .catch((err) => {
+                    console.error(err);
+                    toast.error("Failed to delete bill");
+                  });
+              }}
+              className="rounded-md bg-red-600 px-2.5 py-1 text-xs text-white hover:bg-red-700"
+            >
+              Yes
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="rounded-md bg-gray-200 px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-300"
+            >
+              No
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -151,7 +284,6 @@ function BillRow({ bill, onOpen, onDeleteComplete, onTogglePaid, onSendWhatsapp 
                   </button>
                 )}
 
-                {/* WhatsApp bill sending disabled per client request
                 {isPaid && (
                   <button
                     disabled={sendingWhatsapp}
@@ -164,10 +296,9 @@ function BillRow({ bill, onOpen, onDeleteComplete, onTogglePaid, onSendWhatsapp 
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
                   >
                     <svg className="shrink-0" style={{ width: 14, height: 14, minWidth: 14 }} viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.017 2C6.484 2 2 6.485 2 12.017c0 1.86.502 3.61 1.377 5.11L2 22l4.998-1.351a9.965 9.965 0 0 0 5.02 1.351h.004C17.55 22 22 17.514 22 12.017 22 6.485 17.55 2 12.017 2zm5.885 15.885a8.354 8.354 0 0 1-5.885 2.44H12a8.36 8.36 0 0 1-4.264-1.166l-.306-.183-3.176.86.848-3.096-.2-.318A8.348 8.348 0 0 1 3.67 12.02c0-4.605 3.744-8.35 8.35-8.35 2.23 0 4.326.87 5.902 2.448a8.29 8.29 0 0 1 2.447 5.9c0 2.23-.87 4.326-2.467 5.867z"/></svg>
-                    {sendingWhatsapp ? "Sending..." : "Send Bill on WhatsApp"}
+                    {sendingWhatsapp ? "Sending..." : "Send to WhatsApp"}
                   </button>
                 )}
-                */}
 
 
 
@@ -279,11 +410,6 @@ const BillingList = () => {
       toast.success(
         nextStatus === "paid" ? "Bill marked as paid" : "Bill marked as not paid",
       );
-
-      // Automatically send the invoice on WhatsApp once the bill is paid
-      if (nextStatus === "paid") {
-        handleSendWhatsapp(bill);
-      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to update payment status");
@@ -458,6 +584,12 @@ const BillingList = () => {
           Billing
         </h1>
 
+        {isAdmin && (
+          <div className="sm:ml-auto">
+            <WhatsAppAutoSendToggle type="billing" />
+          </div>
+        )}
+
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
           {isAdmin && (
             <div className="flex items-center gap-2 flex-wrap">
@@ -501,8 +633,29 @@ const BillingList = () => {
         </div>
       ) : (
         <>
-          {/* ── Scrollable Table (all screen sizes) ── */}
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          {/* ── Mobile cards (below md) ── */}
+          <div className="md:hidden space-y-3">
+            {paginatedBills.map((bill) => (
+              <BillCard
+                key={bill.id}
+                bill={bill}
+                onOpen={openModal}
+                onDeleteComplete={removeBillFromUi}
+                onTogglePaid={handleTogglePaid}
+                onSendWhatsapp={handleSendWhatsapp}
+              />
+            ))}
+            <div className="text-center text-xs text-gray-400 pt-1">
+              Showing{" "}
+              <span className="font-semibold text-gray-600">
+                {filteredBillings.length}
+              </span>{" "}
+              records
+            </div>
+          </div>
+
+          {/* ── Scrollable Table (md and up) ── */}
+          <div className="hidden md:block overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div className="overflow-x-auto w-full">
               <table className="w-full min-w-[780px] border-collapse text-left">
                 <thead>

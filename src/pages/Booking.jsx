@@ -8,8 +8,12 @@ import SearchInput from "../components/common/SearchInput";
 import StatusDropdown from "../components/booking/DropDown";
 import { toast } from 'react-toastify';
 import { X } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import WhatsAppAutoSendToggle from "../components/common/WhatsAppAutoSendToggle";
 
 export default function Booking() {
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toLowerCase() === "admin";
   const location = useLocation();
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
@@ -159,6 +163,12 @@ export default function Booking() {
     <Container>
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Bookings</h1>
+
+        {isAdmin && (
+          <div className="md:mr-auto md:ml-4">
+            <WhatsAppAutoSendToggle type="booking" />
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto md:justify-end">
           <SearchInput
