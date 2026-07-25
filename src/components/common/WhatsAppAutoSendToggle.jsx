@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import auth from "../../auth/axiosInstance";
-import { toast } from "react-toastify";
 import { MessageCircle } from "lucide-react";
 
 function Switch({ checked, onChange, disabled }) {
@@ -28,28 +27,12 @@ function Switch({ checked, onChange, disabled }) {
   );
 }
 
-const COPY = {
-  booking: {
-    label: "Auto Confirmation",
-    tooltip: "Customer gets booking confirmation on WhatsApp",
-    onMsg: "Auto-send is confirmation on",
-    offMsg: "Auto-send is confirmation off",
-  },
-  billing: {
-    label: "Auto Invoice",
-    tooltip: "Customer gets their invoice on WhatsApp",
-    onMsg: "Auto-send is invoices on",
-    offMsg: "Auto-send is invoices off",
-  },
-};
-
 export default function WhatsAppAutoSendToggle({ type }) {
   const [settings, setSettings] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const key =
     type === "booking" ? "auto_booking_confirmation" : "auto_bill_payment";
-  const copy = COPY[type];
 
   useEffect(() => {
     auth
@@ -67,10 +50,8 @@ export default function WhatsAppAutoSendToggle({ type }) {
     try {
       const res = await auth.put("/whatsapp-settings", next);
       setSettings(res.data);
-      toast.success(nextValue ? copy.onMsg : copy.offMsg);
     } catch (err) {
       setSettings(prev);
-      toast.error("Failed to update WhatsApp setting");
     } finally {
       setSaving(false);
     }
@@ -81,17 +62,14 @@ export default function WhatsAppAutoSendToggle({ type }) {
   const checked = settings[key];
 
   return (
-    <div
-      title={copy.tooltip}
-      className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1"
-    >
+    <div className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1">
       <MessageCircle
         size={13}
         strokeWidth={2.25}
         className={checked ? "text-emerald-500" : "text-gray-400"}
       />
       <span className="text-[11px] font-medium text-gray-500">
-        {copy.label}
+        Send Invoice
       </span>
       <Switch checked={checked} onChange={handleToggle} disabled={saving} />
     </div>
