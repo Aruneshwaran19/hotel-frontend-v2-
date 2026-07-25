@@ -26,9 +26,12 @@ const ActionsMenu = ({ booking, onDelete, onEdit, onSendWhatsapp }) => {
   useEffect(() => {
     const close = (e) => {
       if (
-        menuRef.current && !menuRef.current.contains(e.target) &&
-        btnRef.current && !btnRef.current.contains(e.target)
-      ) setOpen(false);
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        btnRef.current &&
+        !btnRef.current.contains(e.target)
+      )
+        setOpen(false);
     };
     const onScroll = () => setOpen(false);
     if (open) {
@@ -47,7 +50,9 @@ const ActionsMenu = ({ booking, onDelete, onEdit, onSendWhatsapp }) => {
         ref={btnRef}
         onClick={openMenu}
         className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200 ${
-          open ? "bg-gray-200 text-gray-900" : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+          open
+            ? "bg-gray-200 text-gray-900"
+            : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"
         }`}
         title="Actions"
       >
@@ -59,18 +64,37 @@ const ActionsMenu = ({ booking, onDelete, onEdit, onSendWhatsapp }) => {
       {open && (
         <div
           ref={menuRef}
-          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999, width: 200 }}
+          style={{
+            position: "fixed",
+            top: menuPos.top,
+            left: menuPos.left,
+            zIndex: 9999,
+            width: 200,
+          }}
           className="menu-appear"
         >
           <div className="rounded-xl bg-white shadow-2xl ring-1 ring-black ring-opacity-[0.07] overflow-hidden">
             <div className="py-1">
               <button
-                onClick={() => { setOpen(false); onEdit(booking); }}
+                onClick={() => {
+                  setOpen(false);
+                  onEdit(booking);
+                }}
                 className="group flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 text-indigo-500 group-hover:bg-indigo-200 transition-colors shrink-0">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
                   </svg>
                 </span>
                 <span className="font-medium">Edit Booking</span>
@@ -78,12 +102,25 @@ const ActionsMenu = ({ booking, onDelete, onEdit, onSendWhatsapp }) => {
 
               {WHATSAPP_ENABLED && (
                 <button
-                  onClick={() => { setOpen(false); onSendWhatsapp(booking); }}
+                  onClick={() => {
+                    setOpen(false);
+                    onSendWhatsapp(booking);
+                  }}
                   className="group flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors border-t border-gray-50"
                 >
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-green-100 text-green-500 group-hover:bg-green-200 transition-colors shrink-0">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.2-3.6A7.9 7.9 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.2-3.6A7.9 7.9 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
                     </svg>
                   </span>
                   <span className="font-medium">Send to WhatsApp</span>
@@ -91,7 +128,10 @@ const ActionsMenu = ({ booking, onDelete, onEdit, onSendWhatsapp }) => {
               )}
 
               <button
-                onClick={() => { setOpen(false); onDelete(booking.id); }}
+                onClick={() => {
+                  setOpen(false);
+                  onDelete(booking.id);
+                }}
                 className="group flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors border-t border-gray-50"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-100 text-red-500 group-hover:bg-red-200 transition-colors shrink-0">
@@ -107,14 +147,16 @@ const ActionsMenu = ({ booking, onDelete, onEdit, onSendWhatsapp }) => {
   );
 };
 
-
 /* ================= STATUS SELECT ================= */
 const StatusSelect = ({ value, onChange }) => {
   const styles = {
-    "checked-in":  "bg-emerald-50 text-emerald-700 border-emerald-200 focus:ring-emerald-300",
-    "checked-out": "bg-blue-50 text-blue-700 border-blue-200 focus:ring-blue-300",
-    "cancelled":   "bg-red-50 text-red-700 border-red-200 focus:ring-red-300",
-    "confirmed":   "bg-amber-50 text-amber-700 border-amber-200 focus:ring-amber-300",
+    "checked-in":
+      "bg-emerald-50 text-emerald-700 border-emerald-200 focus:ring-emerald-300",
+    "checked-out":
+      "bg-blue-50 text-blue-700 border-blue-200 focus:ring-blue-300",
+    cancelled: "bg-red-50 text-red-700 border-red-200 focus:ring-red-300",
+    confirmed:
+      "bg-amber-50 text-amber-700 border-amber-200 focus:ring-amber-300",
   };
   const key = value?.toLowerCase() || "confirmed";
   return (
@@ -130,8 +172,18 @@ const StatusSelect = ({ value, onChange }) => {
         <option value="Checked-out">Checked-out</option>
       </select>
       <div className="pointer-events-none absolute inset-y-0 right-1.5 flex items-center">
-        <svg className="w-2.5 h-2.5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+        <svg
+          className="w-2.5 h-2.5 opacity-50"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2.5}
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </div>
     </div>
@@ -141,27 +193,35 @@ const StatusSelect = ({ value, onChange }) => {
 /* ================= STAT CARD ================= */
 const StatCard = ({ label, value, color, icon }) => {
   const gradient = {
-    blue:   "from-blue-500 to-blue-600",
-    green:  "from-emerald-500 to-emerald-600",
+    blue: "from-blue-500 to-blue-600",
+    green: "from-emerald-500 to-emerald-600",
     yellow: "from-amber-400 to-amber-500",
-    red:    "from-red-500 to-red-600",
+    red: "from-red-500 to-red-600",
   }[color];
   const bg = {
-    blue:   "bg-blue-50",
-    green:  "bg-emerald-50",
+    blue: "bg-blue-50",
+    green: "bg-emerald-50",
     yellow: "bg-amber-50",
-    red:    "bg-red-50",
+    red: "bg-red-50",
   }[color];
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl p-5 border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}>
-      <div className={`absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br ${gradient} opacity-[0.08] rounded-full`} />
+    <div
+      className={`relative overflow-hidden rounded-2xl p-5 border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
+    >
+      <div
+        className={`absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br ${gradient} opacity-[0.08] rounded-full`}
+      />
       <div className="relative flex items-start justify-between">
         <div>
-          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
+          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
+            {label}
+          </p>
           <p className="text-3xl font-bold text-gray-800">{value}</p>
         </div>
-        <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center text-xl`}>
+        <div
+          className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center text-xl`}
+        >
           {icon}
         </div>
       </div>
@@ -205,7 +265,6 @@ export default function BookingTable({
 
   return (
     <>
-
       <style>{`
         @keyframes menu-appear {
           from { opacity: 0; transform: scale(0.96) translateY(-4px); }
@@ -215,24 +274,43 @@ export default function BookingTable({
       `}</style>
 
       <div className="space-y-5">
-
         {/* STAT CARDS */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total Bookings" value={bookings.length} color="blue" icon="📋" />
+          <StatCard
+            label="Total Bookings"
+            value={
+              bookings.filter((b) => b.status?.toLowerCase() !== "cancelled")
+                .length
+            }
+            color="blue"
+            icon="📋"
+          />
           <StatCard
             label="Checked In"
-            value={bookings.filter((b) => b.status?.toLowerCase() === "checked-in").length}
-            color="green" icon="🟢"
+            value={
+              bookings.filter((b) => b.status?.toLowerCase() === "checked-in")
+                .length
+            }
+            color="green"
+            icon="🟢"
           />
           <StatCard
             label="Pending"
-            value={bookings.filter((b) => b.status?.toLowerCase() === "confirmed").length}
-            color="yellow" icon="🟡"
+            value={
+              bookings.filter((b) => b.status?.toLowerCase() === "confirmed")
+                .length
+            }
+            color="yellow"
+            icon="🟡"
           />
           <StatCard
             label="Cancelled"
-            value={bookings.filter((b) => b.status?.toLowerCase() === "cancelled").length}
-            color="red" icon="🔴"
+            value={
+              bookings.filter((b) => b.status?.toLowerCase() === "cancelled")
+                .length
+            }
+            color="red"
+            icon="🔴"
           />
         </div>
 
@@ -240,16 +318,21 @@ export default function BookingTable({
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm">
           <div className="overflow-x-auto lg:overflow-x-visible overflow-y-visible">
             <table className="w-full min-w-[700px] lg:min-w-0 text-sm border-collapse rounded-t-2xl overflow-hidden">
-
               {/* Header */}
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200 text-[10.5px] font-semibold uppercase tracking-widest text-gray-400">
                   <th className="px-3 py-3 text-left">Booking ID</th>
                   <th className="px-3 py-3 text-left">Customer</th>
                   <th className="px-3 py-3 text-left">Room</th>
-                  <th className="px-3 py-3 text-left hidden sm:table-cell">Check-in</th>
-                  <th className="px-3 py-3 text-left hidden lg:table-cell">Check-out</th>
-                  <th className="px-3 py-3 text-left hidden md:table-cell">Price</th>
+                  <th className="px-3 py-3 text-left hidden sm:table-cell">
+                    Check-in
+                  </th>
+                  <th className="px-3 py-3 text-left hidden lg:table-cell">
+                    Check-out
+                  </th>
+                  <th className="px-3 py-3 text-left hidden md:table-cell">
+                    Price
+                  </th>
                   <th className="px-3 py-3 text-left">Status</th>
                   <th className="px-3 py-3 text-center w-[60px]">Actions</th>
                 </tr>
@@ -264,14 +347,18 @@ export default function BookingTable({
                     <td colSpan="7" className="text-center py-16">
                       <div className="flex flex-col items-center gap-3">
                         <div className="text-5xl">📭</div>
-                        <p className="text-gray-400 font-medium">No bookings found</p>
-                        <p className="text-gray-300 text-sm">Start by creating your first booking</p>
+                        <p className="text-gray-400 font-medium">
+                          No bookings found
+                        </p>
+                        <p className="text-gray-300 text-sm">
+                          Start by creating your first booking
+                        </p>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   paginatedBookings.map((booking, idx) => {
-                    const isHovered    = hoveredRow === booking.id;
+                    const isHovered = hoveredRow === booking.id;
 
                     return (
                       <tr
@@ -279,7 +366,11 @@ export default function BookingTable({
                         onMouseEnter={() => setHoveredRow(booking.id)}
                         onMouseLeave={() => setHoveredRow(null)}
                         className={`transition-colors duration-150 ${
-                          isHovered ? "bg-indigo-50/50" : idx % 2 !== 0 ? "bg-gray-50/30" : "bg-white"
+                          isHovered
+                            ? "bg-indigo-50/50"
+                            : idx % 2 !== 0
+                              ? "bg-gray-50/30"
+                              : "bg-white"
                         }`}
                       >
                         {/* Booking ID */}
@@ -312,8 +403,16 @@ export default function BookingTable({
                         <td className="px-3 py-3">
                           <div className="flex flex-col gap-1">
                             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-lg w-fit">
-                              <svg className="w-2.5 h-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              <svg
+                                className="w-2.5 h-2.5 text-gray-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
                                   d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
                                 />
                               </svg>
@@ -346,7 +445,9 @@ export default function BookingTable({
                         <td className="px-3 py-3 hidden lg:table-cell">
                           <div className="flex flex-col gap-0.5">
                             <span className="text-[12px] font-semibold text-gray-700 whitespace-nowrap">
-                              {booking.check_out ? formatDate(booking.check_out) : "N/A"}
+                              {booking.check_out
+                                ? formatDate(booking.check_out)
+                                : "N/A"}
                             </span>
                             <span className="text-[9px] text-gray-400 font-medium uppercase tracking-wide">
                               Check-out
@@ -370,19 +471,20 @@ export default function BookingTable({
                         <td className="px-3 py-3">
                           <StatusSelect
                             value={booking.status}
-                            onChange={(e) => onStatusChange(booking.id, e.target.value)}
+                            onChange={(e) =>
+                              onStatusChange(booking.id, e.target.value)
+                            }
                           />
                         </td>
 
                         {/* Actions */}
                         <td className="px-3 py-3">
-                        <ActionsMenu
-                          booking={booking}
-                          onDelete={onDelete}
-                          onEdit={onEdit}
-                          onSendWhatsapp={onSendWhatsapp}
-                        />
-
+                          <ActionsMenu
+                            booking={booking}
+                            onDelete={onDelete}
+                            onEdit={onEdit}
+                            onSendWhatsapp={onSendWhatsapp}
+                          />
                         </td>
                       </tr>
                     );
@@ -395,8 +497,15 @@ export default function BookingTable({
           {/* Footer */}
           <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between rounded-b-2xl">
             <span className="text-xs text-gray-400 font-medium">
-              Showing <span className="text-gray-600 font-semibold">{paginatedBookings.length}</span> of{" "}
-              <span className="text-gray-600 font-semibold">{bookings.length}</span> bookings
+              Showing{" "}
+              <span className="text-gray-600 font-semibold">
+                {paginatedBookings.length}
+              </span>{" "}
+              of{" "}
+              <span className="text-gray-600 font-semibold">
+                {bookings.length}
+              </span>{" "}
+              bookings
             </span>
 
             {/* Inline pagination */}
@@ -423,7 +532,6 @@ export default function BookingTable({
             )}
           </div>
         </div>
-
       </div>
     </>
   );
