@@ -370,7 +370,7 @@ function BillRow({ bill, onOpen, onDeleteComplete, onTogglePaid, onSendWhatsapp 
 // ─── BILLING LIST ───────
 const BillingList = () => {
   const { user } = useAuth();
-  const isAdmin = user?.role?.toLowerCase() === "admin";
+  const isAdmin = ["admin", "staff"].includes(user?.role?.toLowerCase());
 
   const [billings, setBillings] = useState([]);
   const [filteredBillings, setFilteredBillings] = useState([]);

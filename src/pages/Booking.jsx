@@ -14,7 +14,7 @@ import { WHATSAPP_ENABLED } from "../config/features";
 
 export default function Booking() {
   const { user } = useAuth();
-  const isAdmin = user?.role?.toLowerCase() === "admin";
+  const isAdmin = ["admin", "staff"].includes(user?.role?.toLowerCase());
   const location = useLocation();
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
