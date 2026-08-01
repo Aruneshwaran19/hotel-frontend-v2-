@@ -279,6 +279,8 @@ export default function CustomerList() {
   };
 
   /* ── Delete ── */
+  const [forceDeleteId, setForceDeleteId] = useState(null);
+
   const deleteCustomer = (id) => {
     setConfirmDeleteId(id);
   };
@@ -295,12 +297,39 @@ export default function CustomerList() {
       setConfirmDeleteId(null);
     } catch (err) {
       console.error(err);
+      if (err.response?.data?.canForce) {
+        setConfirmDeleteId(null);
+        setForceDeleteId(id);
+      } else {
+        toast.error(
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to delete customer"
+        );
+        setConfirmDeleteId(null);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const confirmForceDeleteCustomer = async () => {
+    const id = forceDeleteId;
+    if (!id) return;
+    setDeleting(true);
+    try {
+      await axios.delete(`${API_BASE_URL}/api/customers/${id}?force=true`);
+      removeLocalCustomer(id);
+      setCustomers((prev) => prev.filter((c) => c.id !== id));
+      toast.success("Customer and their bookings deleted");
+      setForceDeleteId(null);
+    } catch (err) {
+      console.error(err);
       toast.error(
         err.response?.data?.error ||
         err.response?.data?.message ||
-        "Failed to delete customer"
+        "Failed to force delete customer"
       );
-      setConfirmDeleteId(null);
     } finally {
       setDeleting(false);
     }
@@ -502,6 +531,19 @@ export default function CustomerList() {
           loading={deleting}
           onConfirm={confirmDeleteCustomer}
           onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
+
+      {/* ── Force Delete Confirm Dialog ── */}
+      {forceDeleteId && (
+        <ConfirmDialog
+          title="This customer has bookings"
+          message="Deleting anyway will permanently remove this customer AND all of their booking history. This cannot be undone. Are you sure?"
+          confirmLabel="Delete Anyway"
+          cancelLabel="Cancel"
+          loading={deleting}
+          onConfirm={confirmForceDeleteCustomer}
+          onCancel={() => setForceDeleteId(null)}
         />
       )}
     </>
