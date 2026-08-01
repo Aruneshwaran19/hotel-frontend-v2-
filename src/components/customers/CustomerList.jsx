@@ -4,7 +4,6 @@ import axios from "axios";
 import { Eye, Trash2, Edit2, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "react-toastify";
 
-import "./ConfirmDialog.css";
 import CustomerForm from "./CustomerForm";
 import CustomerDetails from "./CustomerDetails";
 import SearchInput from "../common/SearchInput";
@@ -135,52 +134,6 @@ const SkeletonRows = () =>
     </tr>
   ));
 
-/* ================= CONFIRM DIALOG ================= */
-const ConfirmDialog = ({
-  title = "Are you sure?",
-  message,
-  confirmLabel = "Delete",
-  cancelLabel = "Cancel",
-  danger = true,
-  loading = false,
-  onConfirm,
-  onCancel,
-}) => (
-  <div className="confirm-overlay" onClick={onCancel}>
-    <div
-      className="confirm-box"
-      role="alertdialog"
-      aria-modal="true"
-      aria-labelledby="confirm-title"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className={`confirm-icon ${danger ? "confirm-icon--danger" : ""}`}>
-        <Trash2 size={20} />
-      </div>
-      <h3 id="confirm-title" className="confirm-title">{title}</h3>
-      {message && <p className="confirm-message">{message}</p>}
-      <div className="confirm-actions">
-        <button
-          type="button"
-          className="confirm-btn confirm-btn--cancel"
-          onClick={onCancel}
-          disabled={loading}
-        >
-          {cancelLabel}
-        </button>
-        <button
-          type="button"
-          className={`confirm-btn ${danger ? "confirm-btn--danger" : "confirm-btn--primary"}`}
-          onClick={onConfirm}
-          disabled={loading}
-        >
-          {loading ? "Deleting…" : confirmLabel}
-        </button>
-      </div>
-    </div>
-  </div>
-);
-
 /* ================= MODAL ================= */
 const Modal = ({ children, onClose }) => (
   <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center sm:p-4">
@@ -209,8 +162,6 @@ export default function CustomerList() {
   const [viewCustomer, setViewCustomer] = useState(null);
   const [editCustomer, setEditCustomer] = useState(null);
   const [showFormModal, setShowFormModal] = useState(false);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [deleting, setDeleting] = useState(false);
   const { user } = useAuth();
 
   /* ── Fetch ── */
@@ -279,59 +230,45 @@ export default function CustomerList() {
   };
 
   /* ── Delete ── */
-  const [forceDeleteId, setForceDeleteId] = useState(null);
+  const deleteCustomer = async (id) => {
+    if (!window.confirm("Delete this customer?")) return;
 
-  const deleteCustomer = (id) => {
-    setConfirmDeleteId(id);
-  };
-
-  const confirmDeleteCustomer = async () => {
-    const id = confirmDeleteId;
-    if (!id) return;
-    setDeleting(true);
     try {
       await axios.delete(`${API_BASE_URL}/api/customers/${id}`);
       removeLocalCustomer(id);
       setCustomers((prev) => prev.filter((c) => c.id !== id));
       toast.success("Customer deleted");
-      setConfirmDeleteId(null);
+      return;
     } catch (err) {
       console.error(err);
-      if (err.response?.data?.canForce) {
-        setConfirmDeleteId(null);
-        setForceDeleteId(id);
-      } else {
-        toast.error(
-          err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Failed to delete customer"
-        );
-        setConfirmDeleteId(null);
-      }
-    } finally {
-      setDeleting(false);
-    }
-  };
 
-  const confirmForceDeleteCustomer = async () => {
-    const id = forceDeleteId;
-    if (!id) return;
-    setDeleting(true);
-    try {
-      await axios.delete(`${API_BASE_URL}/api/customers/${id}?force=true`);
-      removeLocalCustomer(id);
-      setCustomers((prev) => prev.filter((c) => c.id !== id));
-      toast.success("Customer and their bookings deleted");
-      setForceDeleteId(null);
-    } catch (err) {
-      console.error(err);
+      if (err.response?.data?.canForce) {
+        const forceOk = window.confirm(
+          "This customer has bookings. Deleting anyway will also permanently delete their booking history. Continue?"
+        );
+        if (!forceOk) return;
+
+        try {
+          await axios.delete(`${API_BASE_URL}/api/customers/${id}?force=true`);
+          removeLocalCustomer(id);
+          setCustomers((prev) => prev.filter((c) => c.id !== id));
+          toast.success("Customer and their bookings deleted");
+        } catch (err2) {
+          console.error(err2);
+          toast.error(
+            err2.response?.data?.error ||
+            err2.response?.data?.message ||
+            "Failed to force delete customer"
+          );
+        }
+        return;
+      }
+
       toast.error(
         err.response?.data?.error ||
         err.response?.data?.message ||
-        "Failed to force delete customer"
+        "Failed to delete customer"
       );
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -521,31 +458,6 @@ export default function CustomerList() {
         </Modal>
       )}
 
-      {/* ── Delete Confirm Dialog ── */}
-      {confirmDeleteId && (
-        <ConfirmDialog
-          title="Delete this customer?"
-          message="This action cannot be undone. If this customer has existing bookings, deletion will be blocked until those are handled."
-          confirmLabel="Delete"
-          cancelLabel="Cancel"
-          loading={deleting}
-          onConfirm={confirmDeleteCustomer}
-          onCancel={() => setConfirmDeleteId(null)}
-        />
-      )}
-
-      {/* ── Force Delete Confirm Dialog ── */}
-      {forceDeleteId && (
-        <ConfirmDialog
-          title="This customer has bookings"
-          message="Deleting anyway will permanently remove this customer AND all of their booking history. This cannot be undone. Are you sure?"
-          confirmLabel="Delete Anyway"
-          cancelLabel="Cancel"
-          loading={deleting}
-          onConfirm={confirmForceDeleteCustomer}
-          onCancel={() => setForceDeleteId(null)}
-        />
-      )}
     </>
   );
 }
