@@ -304,7 +304,7 @@ export default function RoomList() {
               initialData={editingRoom}
               onSubmit={handleRoomSubmit}
               onCancel={closeRoomModal}
-              categories={availableCategories}
+              categories={roomCategories}
               canManageCategories={user?.role === "admin"}
               onManageCategories={handleOpenCategoryManager}
             />
