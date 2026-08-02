@@ -86,15 +86,8 @@ export default function BookingList({
     );
 
     const calculateGST = (amount, type) => {
-      let rate = DEFAULT_GST_RATES[type];
-      if (type === "room") {
-        const perNightAmount = amount / (stayDays || 1);
-        rate =
-          perNightAmount > DEFAULT_GST_RATES.room.threshold
-            ? DEFAULT_GST_RATES.room.high
-            : DEFAULT_GST_RATES.room.low;
-      }
-      return Number((amount * rate).toFixed(2));
+      const rate = Number(DEFAULT_GST_RATES[type] || 0);
+      return Number((Number(amount || 0) * rate).toFixed(2));
     };
 
     const roomGst = includeGst ? calculateGST(roomSubtotal, "room") : 0;
