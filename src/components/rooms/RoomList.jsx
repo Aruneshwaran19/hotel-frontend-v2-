@@ -254,7 +254,7 @@ export default function RoomList() {
 
       {activeTab === "categories" ? (
         <RoomCategoryManager
-          categories={roomCategories}
+          categories={availableCategories}
           loading={categoriesLoading}
           error={categoryError}
           canManage={user?.role === "admin"}
@@ -304,7 +304,7 @@ export default function RoomList() {
               initialData={editingRoom}
               onSubmit={handleRoomSubmit}
               onCancel={closeRoomModal}
-              categories={roomCategories}
+              categories={availableCategories}
               canManageCategories={user?.role === "admin"}
               onManageCategories={handleOpenCategoryManager}
             />
