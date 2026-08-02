@@ -254,7 +254,7 @@ export default function RoomList() {
 
       {activeTab === "categories" ? (
         <RoomCategoryManager
-          categories={availableCategories}
+          categories={roomCategories}
           loading={categoriesLoading}
           error={categoryError}
           canManage={user?.role === "admin"}
